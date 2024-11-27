@@ -15,12 +15,25 @@ const props = defineProps({
     type: Array as PropType<Array<PrizeData>>,
     required: true,
   },
+  spins: {
+    type: Number,
+    default: 20,
+  },
+  duration: {
+    type: Number,
+    default: 11000,
+  },
+  mute: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['end', 'start'])
+const emit = defineEmits(['end', 'start', 'loading'])
 
-const spins: number = 3
-const degrees: number = spins * 360
+let player: HTMLAudioElement | undefined = undefined
+let isPlayingSound: boolean = false
+const degrees: number = props.spins * 360
 
 let wheel: d3.Selection<d3.BaseType, PrizeData[], HTMLElement, unknown> | undefined = undefined
 let rotation: number = 0
@@ -74,6 +87,28 @@ function render() {
     .style('fill', '#000809')
 }
 
+function loadSound() {
+  emit('loading', true)
+  player = new Audio('/sounds/spinning-eff.mp3')
+  player.preload = 'auto'
+}
+
+function startSound() {
+  if (!player || isPlayingSound || props.mute) return
+  console.log('play sound')
+  isPlayingSound = true
+  player.currentTime = 0
+  player.play()
+}
+
+function stopSound() {
+  if (!player || props.mute) return
+  console.log('stop sound')
+  isPlayingSound = false
+  player.pause()
+  player.currentTime = 0
+}
+
 function getRandomInt(min: number, max: number) {
   min = Math.ceil(min)
   max = Math.floor(max)
@@ -86,7 +121,10 @@ function rotTween() {
 }
 
 function spin(id: number) {
-  if (counter === 0) emit('start')
+  if (counter === 0) {
+    emit('start')
+    startSound()
+  }
   counter++
   const piedegree = 360 / props.data.length
   const randomAssetIndex = props.data.findIndex((item) => item.value === id)
@@ -98,16 +136,19 @@ function spin(id: number) {
 
   wheel!
     .transition()
-    .duration(3000)
+    .duration(props.duration)
     .attrTween('transform', rotTween)
     .ease(d3.easeCircleOut)
     .on('end', function () {
+      counter = 0
+      stopSound()
       emit('end')
     })
 }
 
 onMounted(() => {
   render()
+  loadSound()
 })
 
 defineExpose({ spin })
