@@ -54,4 +54,7 @@ export default defineNuxtConfig({
   pinia: {
     storesDirs: ['./stores/**'],
   },
+  routeRules: {
+    '/': { redirect: '/main' },
+  },
 })

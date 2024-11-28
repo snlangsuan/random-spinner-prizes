@@ -1,13 +1,12 @@
 <template>
-  <div id="chart">
-    <div class="chart__front" />
-    <div id="result" />
+  <div :id="uid" class="wheel-spinner__container">
+    <div class="wheel-spinner__border" />
+    <div class="wheel-spinner__base" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import * as d3 from 'd3'
-import type { PropType } from 'vue'
 import type { PrizeData } from '~/types/wheel.spinner'
 
 const props = defineProps({
@@ -27,12 +26,22 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  playing: {
+    type: Boolean,
+    default: false,
+  },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['end', 'start', 'loading'])
+const emit = defineEmits(['end', 'start', 'update:loading', 'update:playing'])
+
+const uid = ref<string>(`wheel-${getCurrentInstance()!.uid}`)
+const isPlaying = ref<boolean>(false)
 
 let player: HTMLAudioElement | undefined = undefined
-let isPlayingSound: boolean = false
 const degrees: number = props.spins * 360
 
 let wheel: d3.Selection<d3.BaseType, PrizeData[], HTMLElement, unknown> | undefined = undefined
@@ -49,33 +58,37 @@ function render() {
 
   const fontSize = '18px'
 
-  const svg = d3.select('#chart').append('svg:svg').data([props.data]).attr('width', orgWidth).attr('height', orgHeight)
+  const svg = d3
+    .select(`#${uid.value}`)
+    .append('svg:svg')
+    .data([props.data])
+    .attr('width', orgWidth)
+    .attr('height', orgHeight)
+    .attr('class', 'wheel-spinner__playground')
   const container = svg
     .append('svg:g')
     .attr('transform', `translate(${width / 2 + padding.left},${height / 2 + padding.top})`)
 
   wheel = container.append('g:g').attr('class', 'wheel')
   const pie = d3
-    .pie()
+    .pie<PrizeData>()
     .sort(null)
     .value(() => 1)
-  const arc = d3.arc().innerRadius(0).outerRadius(radius)
+  const arc = d3.arc<d3.PieArcDatum<PrizeData>>().innerRadius(0).outerRadius(radius)
   const arcs = wheel.selectAll('g.slice').data(pie).enter().append('svg:g').attr('class', 'slice')
   arcs
     .append('svg:path')
-    .attr('fill', (d, i) => props.data[i].bgColor ?? '#ffffff')
+    .attr('fill', (d) => d.data.bg_color ?? '#ffffff')
     .attr('d', (d) => arc(d))
 
   arcs
     .append('text')
     .attr('transform', (d) => {
-      d.innerRadius = 0
-      d.outerRadius = radius
-      d.angle = (d.startAngle + d.endAngle) / 2
-      return `rotate(${(d.angle * 180) / Math.PI - 90})translate(${d.outerRadius - 10})`
+      const angle = (d.startAngle + d.endAngle) / 2
+      return `rotate(${(angle * 180) / Math.PI - 90})translate(${radius - 10})`
     })
     .attr('text-anchor', 'end')
-    .text((d, i) => props.data[i].label)
+    .text((d) => d.data.label)
     .style('font-size', fontSize)
 
   svg
@@ -88,15 +101,14 @@ function render() {
 }
 
 function loadSound() {
-  emit('loading', true)
+  emit('update:loading', true)
   player = new Audio('/sounds/spinning-eff.mp3')
   player.preload = 'auto'
 }
 
 function startSound() {
-  if (!player || isPlayingSound || props.mute) return
+  if (!player || props.mute) return
   console.log('play sound')
-  isPlayingSound = true
   player.currentTime = 0
   player.play()
 }
@@ -104,7 +116,6 @@ function startSound() {
 function stopSound() {
   if (!player || props.mute) return
   console.log('stop sound')
-  isPlayingSound = false
   player.pause()
   player.currentTime = 0
 }
@@ -120,9 +131,12 @@ function rotTween() {
   return (t: number) => `rotate(${i(t)})`
 }
 
-function spin(id: number) {
+function spin(id: number | string) {
+  if (isPlaying.value) return
   if (counter === 0) {
     emit('start')
+    isPlaying.value = true
+    emit('update:playing', isPlaying.value)
     startSound()
   }
   counter++
@@ -143,6 +157,8 @@ function spin(id: number) {
       counter = 0
       stopSound()
       emit('end')
+      isPlaying.value = false
+      emit('update:playing', isPlaying.value)
     })
 }
 
@@ -155,36 +171,46 @@ defineExpose({ spin })
 </script>
 
 <style lang="scss" scoped>
-#chart {
-  display: inline-block;
-  width: 500px;
-  height: 500px;
-  position: relative;
-}
+.wheel-spinner {
+  &__container {
+    display: block;
+    width: 500px;
+    height: 500px;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
 
-.chart__front {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 500px;
-  height: 500px;
-  background-color: #ffffff;
-  border: 2px solid #888888;
-  border-radius: 50%;
-  z-index: -1;
-}
+  &__border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 500px;
+    height: 500px;
+    background-color: #ffffff;
+    border: 2px solid #888888;
+    border-radius: 50%;
+  }
 
-#result {
-  position: absolute;
-  top: 40%;
-  left: 40%;
-  text-align: center;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #ffffff;
+  &__base {
+    position: absolute;
+    top: 40%;
+    left: 40%;
+    text-align: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    z-index: 1;
+  }
+
+  &__container :deep(.wheel-spinner__playground) {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
 }
 </style>
