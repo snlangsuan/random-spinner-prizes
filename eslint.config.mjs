@@ -21,6 +21,18 @@ export default withNuxt({
     'prefer-const': 'error',
     'node/no-unsupported-features/es-syntax': 'off',
     'no-unused-vars': 'off',
+    'vue/html-self-closing': [
+      'error',
+      {
+        html: {
+          void: 'always',
+          normal: 'always',
+          component: 'always',
+        },
+        svg: 'always',
+        math: 'always',
+      },
+    ],
     '@typescript-eslint/no-unused-vars': [
       'error',
       {

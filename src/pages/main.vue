@@ -1,82 +1,56 @@
 <template>
-  <v-container class="fill-height">
+  <v-container class="fill-height" style="background-color: #fff8e1" fluid>
     <v-row class="fill-height align-center justify-center">
       <div class="text-center">
-        <wheel-spinner ref="spinner" :data="data" @end="handleOnSpinEnd" />
-        <!-- <v-btn @click="handleOnStartSpin">Spin</v-btn> -->
+        <wheel-spinner ref="spinner" v-model:playing="isPlaying" :data="items" @end="handleOnSpinEnd" />
       </div>
     </v-row>
+    <div style="position: fixed; bottom: 16px; right: 16px">
+      <v-btn :disabled="isPlaying" @click="handleOnStartSpin">Spin</v-btn>
+    </div>
+    <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
   </v-container>
 </template>
 
 <script lang="ts" setup>
+import { usePrizeStore } from '~/stores/prize.store'
 import type WheelSpinner from '~/components/WheelSpinner.vue'
-import type { PrizeData } from '~/types/wheel.spinner'
+import type { PrizeData } from '~/types/prize.d'
 
+const prizeStore = usePrizeStore()
 const api = useApi()
 const spinner = ref<InstanceType<typeof WheelSpinner>>()
-const data = ref<Array<PrizeData>>([
-  {
-    label: 'สติ๊กเกอร์',
-    value: 1,
-    bg_color: '#ffffff',
-    qty: 200,
-  },
-  {
-    label: '002',
-    value: 2,
-    bg_color: '#FFEBEE',
-    qty: 10,
-  },
-  {
-    label: '003',
-    value: 3,
-    bg_color: '#E8EAF6',
-    qty: 10,
-  },
-  {
-    label: 'สติ๊กเกอร์',
-    value: 5,
-    bg_color: '#ffffff',
-    qty: 200,
-  },
-  {
-    label: '004',
-    value: 4,
-    bg_color: '#E3F2FD',
-    qty: 10,
-  },
-  {
-    label: '006',
-    value: 6,
-    bg_color: '#F9FBE7',
-    qty: 10,
-  },
-])
+const isPlaying = ref<boolean>(false)
+const items = computed(() => prizeStore.prize?.items || [])
 
 let interval: ReturnType<typeof setInterval> | undefined = undefined
 let barcode: string = ''
 const isProcessing = ref<boolean>(false)
-function handleOnStartSpin() {
-  spinner.value?.spin(1)
-}
+const isPrizeShow = ref<boolean>(false)
+const prizeDrop = ref<PrizeData>()
+const isEmptyPrize = computed(() => (prizeStore.prize?.items || []).filter((item) => item.usage < item.qty).length < 1)
 
-function randomPrize() {
-  const items = data.value.filter((item) => item.qty > 0)
-  return items[Math.floor(Math.random() * items.length)]
+function handleOnStartSpin() {
+  if (isPlaying.value || isEmptyPrize.value) return
+  const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
+  if (!prize) return
+  console.log(prize.id, prize.label)
+  prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
+  prizeDrop.value = prize
+  spinner.value?.spin(prize.id)
 }
 
 async function handleOnProcessText(text: string) {
-  console.log('text', text, isProcessing.value)
-  if (isProcessing.value) return
+  if (isProcessing.value || isEmptyPrize.value) return
   isProcessing.value = true
   try {
     const result = await api.verifyUser(text, 1)
-    console.log(result)
     if (result.success) {
-      const prize = randomPrize()
-      console.log('prize', prize)
-      spinner.value?.spin(prize.value)
+      const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
+      if (!prize) return
+      prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
+      prizeDrop.value = prize
+      spinner.value?.spin(prize.id)
     } else {
       isProcessing.value = false
     }
@@ -87,19 +61,27 @@ async function handleOnProcessText(text: string) {
 }
 
 function listenerBarcodeScanner(event: KeyboardEvent) {
+  console.log(event.key, event.code)
   if (event.code === 'F12') event.preventDefault()
   if (interval) clearInterval(interval)
   if (event.code === 'Enter') handleOnProcessText(barcode)
-  if (event.key !== 'Shift') barcode += event.key
+  if (event.key !== 'Shift') {
+    barcode += event.key
+    console.log(event.key, barcode)
+  }
   interval = setInterval(() => (barcode = ''), 20)
 }
 
 function handleOnSpinEnd() {
-  console.log('end')
   isProcessing.value = false
+  isPrizeShow.value = true
 }
 
 onMounted(() => {
   window.addEventListener('keydown', listenerBarcodeScanner)
+})
+
+useHead({
+  title: 'Wheel Lucky',
 })
 </script>

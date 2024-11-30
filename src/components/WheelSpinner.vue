@@ -7,7 +7,7 @@
 
 <script lang="ts" setup>
 import * as d3 from 'd3'
-import type { PrizeData } from '~/types/wheel.spinner'
+import type { PrizeData } from '~/types/prize.d'
 
 const props = defineProps({
   data: {
@@ -49,14 +49,14 @@ let rotation: number = 0
 let counter: number = 0
 
 function render() {
-  const padding = { top: 20, right: 20, bottom: 20, left: 20 }
+  const padding = { top: 30, right: 30, bottom: 30, left: 30 }
   const orgWidth = 500
   const orgHeight = 500
   const width = orgWidth - padding.left - padding.right
   const height = orgHeight - padding.top - padding.bottom
   const radius = Math.min(width, height) / 2
 
-  const fontSize = '18px'
+  const fontSize = '10px'
 
   const svg = d3
     .select(`#${uid.value}`)
@@ -81,23 +81,43 @@ function render() {
     .attr('fill', (d) => d.data.bg_color ?? '#ffffff')
     .attr('d', (d) => arc(d))
 
+  // arcs
+  //   .append('text')
+  //   .attr('transform', (d) => {
+  //     const angle = (d.startAngle + d.endAngle) / 2
+  //     return `rotate(${(angle * 180) / Math.PI - 90})translate(${radius - 10})`
+  //   })
+  //   .attr('text-anchor', 'end')
+  //   .text((d) => d.data.label)
+  //   .style('font-size', fontSize)
+
+  let midAngle = 0
   arcs
     .append('text')
     .attr('transform', (d) => {
-      const angle = (d.startAngle + d.endAngle) / 2
-      return `rotate(${(angle * 180) / Math.PI - 90})translate(${radius - 10})`
+      midAngle = (((d.startAngle + d.endAngle) / 2) * 180) / Math.PI - 360
+      const pos = arc.centroid(d)
+      pos[0] = pos[0] * 1.2
+      pos[1] = pos[1] * 1.2
+      return `translate(${pos})rotate(${midAngle})`
     })
-    .attr('text-anchor', 'end')
+    .attr('dy', '0em')
+    .attr('text-anchor', 'middle')
     .text((d) => d.data.label)
-    .style('font-size', fontSize)
+    .style('font-size', '8px')
 
-  svg
-    .append('g')
-    .attr('class', 'arrow')
-    .attr('transform', `translate(${(width + padding.left + padding.right) / 2 - 15}, 12)`)
-    .append('path')
-    .attr('d', `M0 0 H30 L 15 ${(Math.sqrt(3) / 2) * 30}Z`)
-    .style('fill', '#000809')
+  arcs
+    .append('svg:image')
+    .attr('class', 'image')
+    .attr('xlink:href', (d) => d.data.image)
+    .attr('width', 60)
+    .attr('height', 60)
+    .attr('x', -30)
+    .attr('y', -90)
+    .attr('transform', (d) => {
+      midAngle = (((d.startAngle + d.endAngle) / 2) * 180) / Math.PI - 360
+      return `translate(${arc.centroid(d)})rotate(${midAngle})`
+    })
 }
 
 function loadSound() {
@@ -108,14 +128,12 @@ function loadSound() {
 
 function startSound() {
   if (!player || props.mute) return
-  console.log('play sound')
   player.currentTime = 0
   player.play()
 }
 
 function stopSound() {
   if (!player || props.mute) return
-  console.log('stop sound')
   player.pause()
   player.currentTime = 0
 }
@@ -141,12 +159,10 @@ function spin(id: number | string) {
   }
   counter++
   const piedegree = 360 / props.data.length
-  const randomAssetIndex = props.data.findIndex((item) => item.value === id)
+  const randomAssetIndex = props.data.findIndex((item) => item.id === id)
   const randomPieMovement = getRandomInt(1, piedegree)
 
   rotation = (props.data.length - randomAssetIndex) * piedegree - randomPieMovement + degrees
-
-  console.log(rotation)
 
   wheel!
     .transition()
@@ -167,7 +183,7 @@ onMounted(() => {
   loadSound()
 })
 
-defineExpose({ spin })
+defineExpose({ spin, render })
 </script>
 
 <style lang="scss" scoped>
@@ -179,6 +195,8 @@ defineExpose({ spin })
     position: relative;
     overflow: hidden;
     user-select: none;
+    border-radius: 50%;
+    box-shadow: 1px 1.5px 5.5px 4.5px rgba(0, 0, 0, 0.1);
   }
 
   &__border {
@@ -187,24 +205,32 @@ defineExpose({ spin })
     left: 0;
     width: 500px;
     height: 500px;
-    background-color: #ffffff;
-    border: 2px solid #888888;
+    background-color: #e65506;
+    background-image: url('~/assets/images/bg-wheel.png');
+    // border: 4px solid #000000;
     border-radius: 50%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
   }
 
   &__base {
     position: absolute;
-    top: 40%;
-    left: 40%;
+    top: 100px;
+    left: 150px;
     text-align: center;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
+    width: 200px;
+    height: 200px;
+    // border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #ffffff;
+    background-color: transparent;
     z-index: 1;
+    background-image: url('~/assets/images/wheel-pin.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
   }
 
   &__container :deep(.wheel-spinner__playground) {

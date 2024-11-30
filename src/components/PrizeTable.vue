@@ -1,42 +1,73 @@
 <template>
-  <v-card outline>
-    <v-data-table :headers="headers" select-strategy="single" hide-default-footer>
-      <template #[`body.append`]>
-        <tr style="padding-top: 8px; padding-bottom: 8px">
-          <td>
-            <v-checkbox disabled hide-details />
-          </td>
-          <td>
-            <v-text-field hide-details />
-          </td>
-          <td>
-            <v-text-field hide-details />
-          </td>
-          <td>
-            <v-text-field hide-details />
-          </td>
-          <td>
-            <v-text-field hide-details />
-          </td>
-          <td class="text-end">
-            <v-btn variant="plain" color="success" icon>
-              <v-icon>mdi-check</v-icon>
-              <v-tooltip activator="parent" top>save</v-tooltip>
-            </v-btn>
-            <v-btn variant="plain" color="error" icon>
-              <v-icon>mdi-close</v-icon>
-              <v-tooltip activator="parent" top>cancel</v-tooltip>
-            </v-btn>
-          </td>
-        </tr>
+  <v-card color="grey-lighten-2" variant="outlined" flat>
+    <v-data-table
+      :headers="headers"
+      :items="props.data"
+      item-value="value"
+      select-strategy="single"
+      hide-default-footer
+      fixed-header
+    >
+      <template #[`item.first_item`]="{ item }">
+        <v-checkbox
+          v-model="item.is_first"
+          class="mx-auto"
+          width="56"
+          hide-details
+          @change="handleOnChangeFirstItem(item.id)"
+        />
+      </template>
+      <template #[`item.stock`]="{ item }">
+        <div>{{ Number(item.qty) - Number(item.usage || 0) }}/{{ item.qty }}</div>
+      </template>
+      <template #[`item.weight`]="{ item }">
+        <div>{{ Number(item.weight).toFixed(2) }}</div>
+      </template>
+      <template #[`item.image`]="{ item }">
+        <v-img :src="item.image" class="my-2" height="60" width="60" contain />
+      </template>
+      <template #[`item.tools`]="{ index, item }">
+        <div class="d-flex align-center justify-end" :style="{ gap: '8px' }">
+          <v-tooltip text="นำขึ้น" location="top">
+            <template #activator="{ props: arrowUpProps }">
+              <v-icon :disabled="index === 0" v-bind="arrowUpProps" @click="handleOnMoveUp(item.id)">
+                mdi-arrow-up-thin
+              </v-icon>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="นำลง" location="top">
+            <template #activator="{ props: arrowDownProps }">
+              <v-icon
+                :disabled="index >= props.data.length - 1"
+                v-bind="arrowDownProps"
+                @click="handleOnMoveDown(item.id)"
+              >
+                mdi-arrow-down-thin
+              </v-icon>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="แก้ไข" location="top">
+            <template #activator="{ props: editProps }">
+              <v-icon v-bind="editProps" @click="handleOnEdit(item.id)">mdi-pencil-outline</v-icon>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="นำออก" location="top">
+            <template #activator="{ props: removeProps }">
+              <v-icon v-bind="removeProps" @click="handleOnRemove(item.id)">mdi-delete-outline</v-icon>
+            </template>
+          </v-tooltip>
+        </div>
       </template>
     </v-data-table>
   </v-card>
 </template>
 
 <script lang="ts" setup>
+import { usePrizeStore } from '~/stores/prize.store'
 import type { THeaders } from '~/types/vuetify'
-import type { PrizeData } from '~/types/wheel.spinner'
+import type { PrizeData } from '~/types/prize.d'
+
+const prizeStore = usePrizeStore()
 
 const props = defineProps({
   data: {
@@ -49,47 +80,75 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['edit', 'remove', 'up', 'down', 'reset'])
+
 const headers = ref<THeaders>([
   {
-    title: 'First item',
+    title: 'เริ่มต้น',
     align: 'center',
     key: 'first_item',
     sortable: false,
     width: 120,
   },
   {
-    title: 'Id',
+    title: 'ไอดี',
     align: 'start',
-    key: 'value',
+    key: 'id',
     sortable: false,
   },
   {
-    title: 'Name',
+    title: 'ป้าย',
     align: 'start',
     key: 'label',
     sortable: false,
   },
   {
-    title: 'Icon',
+    title: 'ภาพของรางวัล',
     align: 'start',
-    key: 'icon',
+    key: 'image',
     sortable: false,
   },
   {
-    title: 'Background',
+    title: 'เรทออกรางวัล',
     align: 'start',
-    key: 'background',
-    width: 140,
+    key: 'weight',
+    sortable: false,
+  },
+  {
+    title: 'ยอดคงเหลือ',
+    align: 'center',
+    key: 'stock',
     sortable: false,
   },
   {
     title: '',
     align: 'end',
-    key: 'tool',
+    key: 'tools',
     width: 140,
     sortable: false,
   },
 ])
+
+function handleOnChangeFirstItem(id: string) {
+  prizeStore.resetFirst()
+  prizeStore.addFirst(id)
+}
+
+function handleOnEdit(id: string) {
+  emit('edit', id)
+}
+
+function handleOnRemove(id: string) {
+  emit('remove', id)
+}
+
+function handleOnMoveUp(id: string) {
+  emit('up', id)
+}
+
+function handleOnMoveDown(id: string) {
+  emit('down', id)
+}
 </script>
 
 <style lang="scss" scoped>
