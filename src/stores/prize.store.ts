@@ -58,10 +58,11 @@ export const usePrizeStore = defineStore('prize.store', () => {
     })
   }
 
-  function addFirst(id: string) {
+  function addFirst(id: string, value: boolean) {
     const idx = prize.value?.items.findIndex((item) => item.id === id) ?? -1
     if (idx < 0) return
-    prize.value!.items[idx].is_first = true
+    if (value) prize.value!.items[idx].is_first = value
+    console.log(prize.value?.items[idx], value)
   }
 
   return {

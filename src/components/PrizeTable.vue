@@ -10,11 +10,11 @@
     >
       <template #[`item.first_item`]="{ item }">
         <v-checkbox
-          v-model="item.is_first"
+          :model-value="item.is_first"
           class="mx-auto"
           width="56"
           hide-details
-          @change="handleOnChangeFirstItem(item.id)"
+          @click="handleOnChangeFirstItem(item.id, !item.is_first!)"
         />
       </template>
       <template #[`item.stock`]="{ item }">
@@ -129,9 +129,10 @@ const headers = ref<THeaders>([
   },
 ])
 
-function handleOnChangeFirstItem(id: string) {
+function handleOnChangeFirstItem(id: string, value: boolean) {
+  console.log('update', value)
   prizeStore.resetFirst()
-  prizeStore.addFirst(id)
+  prizeStore.addFirst(id, value)
 }
 
 function handleOnEdit(id: string) {

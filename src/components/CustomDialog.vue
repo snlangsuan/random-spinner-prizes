@@ -7,8 +7,10 @@
       <v-card-text v-else>{{ options.message }}</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn @click="handleOnCancel">{{ options.cancelLabel ? options.cancelLabel : 'ยกเลิก' }}</v-btn>
-        <v-btn :color="options.type || 'success'" @click="handleOnConfirm">
+        <v-btn v-if="options.showCancelButton" @click="handleOnCancel">
+          {{ options.cancelLabel ? options.cancelLabel : 'ยกเลิก' }}
+        </v-btn>
+        <v-btn v-if="options.showConfirmButton" :color="options.type || 'success'" @click="handleOnConfirm">
           {{ options.confirmLabel ? options.confirmLabel : 'ยืนยัน' }}
         </v-btn>
       </v-card-actions>
@@ -18,7 +20,7 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import type { IConfirmDialogOption } from '~/types/shared'
+import type { ICustomDialogOption } from '~/types/custom.dialog'
 
 const props = defineProps({
   modelValue: {
@@ -26,7 +28,7 @@ const props = defineProps({
     default: false,
   },
   options: {
-    type: Object as PropType<IConfirmDialogOption>,
+    type: Object as PropType<ICustomDialogOption>,
     default: () => ({}),
   },
 })
@@ -45,11 +47,11 @@ const isOpen = computed({
 const mResolve = ref<(isConfirm: boolean) => void>()
 const mReject = ref<(error: Error) => void>()
 
-const mOption = ref<IConfirmDialogOption>({})
+const mOption = ref<ICustomDialogOption>({})
 
 const options = computed(() => (Object.keys(props.options).length > 0 ? props.options : mOption.value))
 
-function open(options: IConfirmDialogOption) {
+function open(options: ICustomDialogOption) {
   mOption.value = options
   isOpen.value = true
   return new Promise((resolve, reject) => {

@@ -1,7 +1,15 @@
 <template>
-  <div :id="uid" class="wheel-spinner__container">
+  <div :id="uid" class="wheel-spinner__container" :style="{ width: `${wheelWidth}px`, height: `${wheelHeight}px` }">
     <div class="wheel-spinner__border" />
-    <div class="wheel-spinner__base" />
+    <div
+      class="wheel-spinner__base"
+      :style="{
+        width: `${wheelWidth * 0.4}px`,
+        height: `${wheelHeight * 0.4}px`,
+        top: `${wheelHeight * 0.2}px`,
+        left: `${wheelWidth * 0.3}px`,
+      }"
+    />
   </div>
 </template>
 
@@ -16,11 +24,11 @@ const props = defineProps({
   },
   spins: {
     type: Number,
-    default: 20,
+    default: 5,
   },
   duration: {
     type: Number,
-    default: 11000,
+    default: 3000,
   },
   mute: {
     type: Boolean,
@@ -33,6 +41,10 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false,
+  },
+  first: {
+    type: String,
+    default: '',
   },
 })
 
@@ -48,22 +60,23 @@ let wheel: d3.Selection<d3.BaseType, PrizeData[], HTMLElement, unknown> | undefi
 let rotation: number = 0
 let counter: number = 0
 
-function render() {
-  const padding = { top: 30, right: 30, bottom: 30, left: 30 }
-  const orgWidth = 500
-  const orgHeight = 500
-  const width = orgWidth - padding.left - padding.right
-  const height = orgHeight - padding.top - padding.bottom
-  const radius = Math.min(width, height) / 2
+const wheelWidth = ref<number>(700)
+const wheelHeight = ref<number>(700)
 
-  const fontSize = '10px'
+function render() {
+  const padding = { top: 45, right: 45, bottom: 45, left: 45 }
+  // const orgWidth = 500
+  // const orgHeight = 500
+  const width = wheelWidth.value - padding.left - padding.right
+  const height = wheelHeight.value - padding.top - padding.bottom
+  const radius = Math.min(width, height) / 2
 
   const svg = d3
     .select(`#${uid.value}`)
     .append('svg:svg')
     .data([props.data])
-    .attr('width', orgWidth)
-    .attr('height', orgHeight)
+    .attr('width', wheelWidth.value)
+    .attr('height', wheelHeight.value)
     .attr('class', 'wheel-spinner__playground')
   const container = svg
     .append('svg:g')
@@ -97,32 +110,41 @@ function render() {
     .attr('transform', (d) => {
       midAngle = (((d.startAngle + d.endAngle) / 2) * 180) / Math.PI - 360
       const pos = arc.centroid(d)
-      pos[0] = pos[0] * 1.2
-      pos[1] = pos[1] * 1.2
+      pos[0] = pos[0] * 1.1
+      pos[1] = pos[1] * 1.1
       return `translate(${pos})rotate(${midAngle})`
     })
     .attr('dy', '0em')
     .attr('text-anchor', 'middle')
     .text((d) => d.data.label)
-    .style('font-size', '8px')
+    .style('font-size', '14px')
 
   arcs
     .append('svg:image')
     .attr('class', 'image')
     .attr('xlink:href', (d) => d.data.image)
-    .attr('width', 60)
-    .attr('height', 60)
-    .attr('x', -30)
-    .attr('y', -90)
+    .attr('width', 100)
+    .attr('height', 100)
+    .attr('x', -50)
+    .attr('y', -135)
     .attr('transform', (d) => {
       midAngle = (((d.startAngle + d.endAngle) / 2) * 180) / Math.PI - 360
       return `translate(${arc.centroid(d)})rotate(${midAngle})`
     })
+
+  wheel.attr('transform', () => {
+    const piedegree = 360 / props.data.length
+    const randomAssetIndex = props.data.findIndex((item) => item.id === props.first)
+    const randomPieMovement = 22.5
+
+    rotation = (props.data.length - randomAssetIndex) * piedegree - randomPieMovement + degrees
+    return `rotate(${rotation})`
+  })
 }
 
 function loadSound() {
   emit('update:loading', true)
-  player = new Audio('/sounds/spinning-eff.mp3')
+  player = new Audio('/sounds/spinning-eff1.mp3')
   player.preload = 'auto'
 }
 
@@ -190,8 +212,8 @@ defineExpose({ spin, render })
 .wheel-spinner {
   &__container {
     display: block;
-    width: 500px;
-    height: 500px;
+    // width: 500px;
+    // height: 500px;
     position: relative;
     overflow: hidden;
     user-select: none;
@@ -203,8 +225,8 @@ defineExpose({ spin, render })
     position: absolute;
     top: 0;
     left: 0;
-    width: 500px;
-    height: 500px;
+    width: 100%;
+    height: 100%;
     background-color: #e65506;
     background-image: url('~/assets/images/bg-wheel.png');
     // border: 4px solid #000000;
@@ -216,11 +238,11 @@ defineExpose({ spin, render })
 
   &__base {
     position: absolute;
-    top: 100px;
-    left: 150px;
+    // top: 100px;
+    // left: 150px;
     text-align: center;
-    width: 200px;
-    height: 200px;
+    // width: 200px;
+    // height: 200px;
     // border-radius: 50%;
     display: flex;
     align-items: center;

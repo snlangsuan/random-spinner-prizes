@@ -6,18 +6,40 @@
         <span class="font-weight-regular">({{ prizeItems.length }}/{{ maxItems }})</span>
       </v-toolbar-title>
       <v-spacer />
-      <div class="d-flex" style="gap: 8px">
+      <div class="d-flex align-center" style="gap: 8px">
         <v-btn variant="flat" rounded @click="handleOnReset">
           <template #prepend>
-            <v-icon>mdi-refresh</v-icon>
+            <v-icon>mdi-gift-outline</v-icon>
           </template>
-          รีเซ็ต
+          รีเซ็ตรา่งวัล
         </v-btn>
         <v-btn color="primary" variant="flat" rounded @click="handleOnCreatePrize">
           <template #prepend>
             <v-icon>mdi-plus</v-icon>
           </template>
           เพิ่มรางวัล
+        </v-btn>
+        <v-btn density="compact" icon>
+          <v-icon>mdi-dots-vertical</v-icon>
+          <v-menu activator="parent">
+            <v-list>
+              <v-list-item title="รีโหลดจอ" @click="handleOnReloadScreen">
+                <template #prepend>
+                  <v-icon>mdi-monitor</v-icon>
+                </template>
+              </v-list-item>
+              <v-list-item title="นำเข้าของรางวัล" @click="handleOnImportPrizes">
+                <template #prepend>
+                  <v-icon>mdi-file-upload-outline</v-icon>
+                </template>
+              </v-list-item>
+              <v-list-item title="นำออกของรางวัล" @click="handleOnExportPrizes">
+                <template #prepend>
+                  <v-icon>mdi-file-download-outline</v-icon>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </v-btn>
       </div>
     </v-toolbar>
@@ -39,19 +61,21 @@
       @reset="handleOnResetPrizeBalance"
     />
 
-    <confirm-dialog ref="confirmDialogRef" v-model="isConfirmDelete" />
+    <custom-dialog ref="customDialogRef" v-model="isDialogShow" />
   </v-container>
 </template>
 
 <script lang="ts" setup>
 import { usePrizeStore } from '~/stores/prize.store'
-import type ConfirmDialog from '~/components/ConfirmDialog.vue'
+import { GAME_MESSAGE_CHANNEL } from '~/constants/game'
+import ExcelJs from 'exceljs'
+import type CustomDialog from '~/components/CustomDialog.vue'
 import type { PrizeData } from '~/types/prize.d'
 
 const prizeStore = usePrizeStore()
 
-const confirmDialogRef = ref<InstanceType<typeof ConfirmDialog>>()
-const isConfirmDelete = ref<boolean>(false)
+const customDialogRef = ref<InstanceType<typeof CustomDialog>>()
+const isDialogShow = ref<boolean>(false)
 const maxItems = ref<number>(20)
 const editPrizeItem = ref<PrizeData>({
   id: '',
@@ -68,6 +92,7 @@ const prizeItems = computed(() => prizeStore.prize?.items || [])
 const totalWeight = computed(() => prizeItems.value.reduce((total, item) => total + item.weight, 0))
 const maxWeight = computed(() => 1 - totalWeight.value)
 const prizeIds = computed(() => prizeItems.value.map((item) => item.id))
+const channel = new BroadcastChannel(GAME_MESSAGE_CHANNEL)
 
 function handleOnCreatePrize() {
   editPrizeItem.value = {
@@ -107,10 +132,12 @@ function handleOnEditPrize(id: string) {
 async function handleOnRemovePrize(id: string) {
   const prize = prizeItems.value.find((item) => item.id === id)
   if (!prize) return
-  const confirm = await confirmDialogRef.value?.open({
+  const confirm = await customDialogRef.value?.open({
     html: `คุณต้องการลบ <strong>${prize.label} (${prize.id})</strong> ออกจากรายการของรางวัลหรือไม่`,
     confirmLabel: 'ลบ',
     type: 'error',
+    showCancelButton: true,
+    showConfirmButton: true,
   })
   if (confirm) prizeStore.removePrize(id)
 }
@@ -131,14 +158,100 @@ function handleOnResetPrizeBalance(id: string) {
 }
 
 async function handleOnReset() {
-  const result = await confirmDialogRef.value?.open({
+  const result = await customDialogRef.value?.open({
     type: 'error',
     message: 'ต้องการจะรีเซ็ตข้อมูลใช่หรือไม่',
     confirmLabel: 'รีเซ็ต',
     width: 320,
+    showCancelButton: true,
+    showConfirmButton: true,
   })
   if (!result) return
   prizeStore.resetUsage()
+}
+
+function handleOnReloadScreen() {
+  channel.postMessage({ reload: true })
+}
+
+async function handleOnImportPrizes() {
+  try {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'text/csv'
+    return new Promise<void>((resolve) => {
+      input.addEventListener('change', () => {
+        // console.log(input.files)
+        // resolve()
+        if (!input.files || input.files.length < 1) return resolve()
+        const file = input.files[0]
+        
+      })
+      input.dispatchEvent(new MouseEvent('click'))
+    })
+  } catch (_error) {
+    customDialogRef.value?.open({
+      message: 'ไม่สามารถนำข้อมูลออกได้',
+      showCancelButton: true,
+      cancelLabel: 'ตกลง',
+    })
+  }
+  // customDialogRef.value?.open({
+  //   message: 'ไม่สามารถนำข้อมูลออกได้',
+  //   showCancelButton: true,
+  //   cancelLabel: 'ตกลง'
+  // })
+}
+
+function readFileToBuffer(file: File) {
+  const reader = new FileReader()
+  return new Promise((resolve, reject) => {
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = (error) => reject(error)
+    reader.readAsArrayBuffer(file)
+  })
+}
+
+async function readImportFile(file: File) {
+  const workbook = new ExcelJs.Workbook()
+  const buffer = await readFileToBuffer(file)
+  const data = await workbook.csv.load(buffer)
+}
+
+async function handleOnExportPrizes() {
+  try {
+    const workbook = new ExcelJs.Workbook()
+    const sheet = workbook.addWorksheet()
+    sheet.addRow(['is_first', 'id', 'label', 'image', 'weight', 'usaage', 'qty', 'color', 'bg_color'])
+    for (const item of prizeStore.prize?.items || []) {
+      sheet.addRow([
+        item.is_first,
+        item.id,
+        item.label,
+        item.image,
+        item.weight,
+        item.usage,
+        item.qty,
+        String(item.color).toLowerCase(),
+        String(item.bg_color).toLowerCase(),
+      ])
+    }
+    const filename = `prize-items-${Date.now()}.csv`
+    const buffer = await workbook.csv.writeBuffer()
+    const blob = new Blob([buffer])
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    window.URL.revokeObjectURL(url)
+  } catch (_error) {
+    customDialogRef.value?.open({
+      message: 'ไม่สามารถนำข้อมูลออกได้',
+      showCancelButton: true,
+      cancelLabel: 'ตกลง',
+    })
+  }
 }
 
 useHead({

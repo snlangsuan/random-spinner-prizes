@@ -4,7 +4,7 @@ export const prizeItemValidatorSchema = zod.object({
   label: zod
     .string({ required_error: 'จำเป็นต้องระบุชื่อ' })
     .min(1, { message: 'ต้องมีความยาว 1 ตัวอักษรขึ้นไป' })
-    .max(30, { message: 'ต้องมีความยาวไม่เกิน 30 ตัวอักษร' })
+    .max(20, { message: 'ต้องมีความยาวไม่เกิน 20 ตัวอักษร' })
     .trim(),
   id: zod
     .string({ required_error: 'จำเป็นต้องระบุไอดี' })

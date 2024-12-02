@@ -24,14 +24,15 @@ export const convDataURL = (image: File | Blob): Promise<string> => {
 }
 
 export const weightedRandom = (items: Array<PrizeData>): PrizeData | undefined => {
-  const weights = items.map((item) => item.weight * 100)
+  const shuffleItems = items.map((item) => ({ ...item })).sort(() => Math.random() - 0.5)
+  const weights = shuffleItems.map((item) => item.weight * 100)
   const totalWeight = weights.reduce((sum, i) => sum + i, 0)
   const randomNumber = Math.floor(Math.random() * totalWeight) + 1
   let currentWeight = 0
   for (let itemIndex = 0; itemIndex < weights.length; itemIndex++) {
     currentWeight += weights[itemIndex]
     if (randomNumber <= currentWeight) {
-      return items[itemIndex]
+      return shuffleItems[itemIndex]
     }
   }
   // const cumulativeWeights: number[] = []

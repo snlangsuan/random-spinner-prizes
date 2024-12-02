@@ -20,6 +20,7 @@
     "convert-layout": "^0.11.1",
     "d3": "^7.9.0",
     "dayjs": "^1.11.13",
+    "exceljs": "^4.4.0",
     "nuxt": "^3.14.1592",
     "pinia": "^2.2.8",
     "pinia-shared-state": "^0.5.1",

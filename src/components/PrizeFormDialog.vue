@@ -54,7 +54,7 @@
       </v-card-actions>
     </v-card>
 
-    <confirm-dialog ref="confirmDialogRef" v-model="isConfirmReset" />
+    <custom-dialog ref="customDialogRef" v-model="isConfirmReset" />
   </v-dialog>
 </template>
 
@@ -62,7 +62,7 @@
 import { toTypedSchema } from '@vee-validate/zod'
 import { useField, useForm } from 'vee-validate'
 import { prizeItemValidatorSchema } from '~/validators/prize.validator'
-import ConfirmDialog from '~/components/ConfirmDialog.vue'
+import type CustomDialog from '~/components/CustomDialog.vue'
 import type { PrizeData } from '~/types/prize'
 import type zod from 'zod'
 import type { PropType } from 'vue'
@@ -94,7 +94,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'update:data', 'save', 'reset'])
 
-const confirmDialogRef = ref<InstanceType<typeof ConfirmDialog>>()
+const customDialogRef = ref<InstanceType<typeof CustomDialog>>()
 const isConfirmReset = ref<boolean>(false)
 
 const isOpen = computed({
@@ -147,7 +147,7 @@ function handleOnCancel() {
 }
 
 async function handleOnRest() {
-  const confirmed = await confirmDialogRef.value?.open({
+  const confirmed = await customDialogRef.value?.open({
     message: 'คุณต้องการรีเซ็ตยอดคงเหลือใช่หรือไม่',
     confirmLabel: 'ยืนยัน',
     type: 'error',
