@@ -62,13 +62,16 @@
     />
 
     <custom-dialog ref="customDialogRef" v-model="isDialogShow" />
+    <v-overlay :model-value="isLoading" class="align-center justify-center">
+      <v-progress-circular color="primary" indeterminate />
+    </v-overlay>
   </v-container>
 </template>
 
 <script lang="ts" setup>
 import { usePrizeStore } from '~/stores/prize.store'
 import { GAME_MESSAGE_CHANNEL } from '~/constants/game'
-import ExcelJs from 'exceljs'
+import * as d3 from 'd3'
 import type CustomDialog from '~/components/CustomDialog.vue'
 import type { PrizeData } from '~/types/prize.d'
 
@@ -76,6 +79,7 @@ const prizeStore = usePrizeStore()
 
 const customDialogRef = ref<InstanceType<typeof CustomDialog>>()
 const isDialogShow = ref<boolean>(false)
+const isLoading = ref<boolean>(false)
 const maxItems = ref<number>(20)
 const editPrizeItem = ref<PrizeData>({
   id: '',
@@ -179,13 +183,16 @@ async function handleOnImportPrizes() {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'text/csv'
-    return new Promise<void>((resolve) => {
-      input.addEventListener('change', () => {
-        // console.log(input.files)
-        // resolve()
+    return new Promise<void>((resolve, reject) => {
+      input.addEventListener('change', async () => {
         if (!input.files || input.files.length < 1) return resolve()
         const file = input.files[0]
-        
+        try {
+          const data = await csvToJson(file)
+          prizeStore.load(data)
+        } catch (error) {
+          reject(error)
+        }
       })
       input.dispatchEvent(new MouseEvent('click'))
     })
@@ -203,55 +210,58 @@ async function handleOnImportPrizes() {
   // })
 }
 
-function readFileToBuffer(file: File) {
-  const reader = new FileReader()
-  return new Promise((resolve, reject) => {
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = (error) => reject(error)
-    reader.readAsArrayBuffer(file)
+async function csvToJson(file: File): Promise<Array<PrizeData> | []> {
+  const text = await readFileToBuffer(file)
+  const jsonData = await d3.csvParse(text, (row) => {
+    return { ...row, weight: Number(row.weight), usage: Number(row.usage), qty: Number(row.qty) }
   })
+  return jsonData as unknown as Array<PrizeData>
 }
 
-async function readImportFile(file: File) {
-  const workbook = new ExcelJs.Workbook()
-  const buffer = await readFileToBuffer(file)
-  const data = await workbook.csv.load(buffer)
+function readFileToBuffer(file: File): Promise<string> {
+  const reader = new FileReader()
+  return new Promise((resolve, reject) => {
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = (error) => reject(error)
+    reader.readAsText(file)
+  })
 }
 
 async function handleOnExportPrizes() {
   try {
-    const workbook = new ExcelJs.Workbook()
-    const sheet = workbook.addWorksheet()
-    sheet.addRow(['is_first', 'id', 'label', 'image', 'weight', 'usaage', 'qty', 'color', 'bg_color'])
-    for (const item of prizeStore.prize?.items || []) {
-      sheet.addRow([
-        item.is_first,
-        item.id,
-        item.label,
-        item.image,
-        item.weight,
-        item.usage,
-        item.qty,
-        String(item.color).toLowerCase(),
-        String(item.bg_color).toLowerCase(),
-      ])
-    }
-    const filename = `prize-items-${Date.now()}.csv`
-    const buffer = await workbook.csv.writeBuffer()
-    const blob = new Blob([buffer])
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    window.URL.revokeObjectURL(url)
+    isLoading.value = true
+    const items = prizeStore.prize?.items || []
+    const csv = jsonToCsv(items)
+    writeFile(csv)
+    isLoading.value = false
   } catch (_error) {
+    isLoading.value = false
     customDialogRef.value?.open({
       message: 'ไม่สามารถนำข้อมูลออกได้',
       showCancelButton: true,
       cancelLabel: 'ตกลง',
     })
   }
+}
+
+function jsonToCsv(items: Array<PrizeData>) {
+  const header = Object.keys(items[0])
+  const headerString = header.join(',')
+  const replacer = (key: string, value: unknown) => value ?? ''
+  const rowItems = items.map((row) =>
+    header.map((fieldName) => JSON.stringify(row[fieldName as keyof typeof row], replacer)).join(',')
+  )
+  const csv = [headerString, ...rowItems].join('\r\n')
+  return csv
+}
+
+function writeFile(content: string) {
+  const file = new Blob([content], { type: 'text/csv' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(file)
+  link.download = `prize-items-${Date.now()}.csv`
+  link.click()
+  URL.revokeObjectURL(link.href)
 }
 
 useHead({

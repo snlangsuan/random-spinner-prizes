@@ -62,7 +62,10 @@ export const usePrizeStore = defineStore('prize.store', () => {
     const idx = prize.value?.items.findIndex((item) => item.id === id) ?? -1
     if (idx < 0) return
     if (value) prize.value!.items[idx].is_first = value
-    console.log(prize.value?.items[idx], value)
+  }
+
+  function load(data: Array<PrizeData>) {
+    prize.value!.items = data
   }
 
   return {
@@ -75,5 +78,6 @@ export const usePrizeStore = defineStore('prize.store', () => {
     moveUp,
     moveDown,
     resetUsage,
+    load,
   }
 })
