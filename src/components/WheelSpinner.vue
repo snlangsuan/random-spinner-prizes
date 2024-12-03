@@ -17,6 +17,8 @@
 import * as d3 from 'd3'
 import type { PrizeData } from '~/types/prize.d'
 
+const runtimeConfig = useRuntimeConfig()
+
 const props = defineProps({
   data: {
     type: Array as PropType<Array<PrizeData>>,
@@ -143,8 +145,9 @@ function render() {
 }
 
 function loadSound() {
+  console.log(runtimeConfig.app.baseURL)
   emit('update:loading', true)
-  player = new Audio('sounds/spinning-eff.mp3')
+  player = new Audio(`${runtimeConfig.app.baseURL}sounds/spinning-eff.mp3`)
   player.preload = 'auto'
 }
 
