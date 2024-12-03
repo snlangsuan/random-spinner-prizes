@@ -72,7 +72,7 @@ function handleOnStartSpin() {
 
 async function addLog(user: IUserInfo, prizeId: string) {
   try {
-    await api.addGameLogger(Number(user.emp_code), 1, prizeId)
+    await api.addGameLogger(user.id, 1, prizeId)
   } catch (error) {
     console.error(error)
   }
@@ -92,7 +92,7 @@ async function handleOnProcessText(text: string) {
     const result = await api.verifyUser(text, 1)
     if (result.success) {
       const user = result.user!
-      const prize = getPrize(user.emp_code, user.first_name + ' ' + user.last_name)
+      const prize = getPrize(String(user.id), user.first_name + ' ' + user.last_name)
       if (!prize) return
       await addLog(user, prize.id)
       prizeDrop.value = prize
