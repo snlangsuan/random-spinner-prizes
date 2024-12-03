@@ -11,8 +11,14 @@
         />
       </div>
     </v-row>
-    <div style="position: fixed; bottom: 16px; right: 16px">
-      <v-btn :disabled="isPlaying" @click="handleOnStartSpin">Spin</v-btn>
+    <div class="text-caption" style="position: fixed; bottom: 8px; left: 8px">
+      <!-- {{ barcode }} -->
+      <v-progress-circular v-show="isReceivingText" color="primary" indeterminate />
+    </div>
+    <div style="position: fixed; bottom: 8px; right: 8px">
+      <v-btn :disabled="isPlaying" variant="plain" icon @click="handleOnStartSpin">
+        <v-icon>mdi-bug-play-outline</v-icon>
+      </v-btn>
     </div>
     <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
     <main-info-dialog ref="infoDialogRef" v-model="isInfoShow" />
@@ -21,6 +27,7 @@
 
 <script lang="ts" setup>
 import { usePrizeStore } from '~/stores/prize.store'
+import { useHistoryStore } from '~/stores/history.store'
 import MainInfoDialog from '~/components/MainInfoDialog.vue'
 import { GAME_MESSAGE_CHANNEL } from '~/constants/game'
 import type WheelSpinner from '~/components/WheelSpinner.vue'
@@ -28,6 +35,7 @@ import type { PrizeData } from '~/types/prize.d'
 import type { IGameStage } from '~/types/game.d'
 
 const prizeStore = usePrizeStore()
+const historyStore = useHistoryStore()
 const api = useApi()
 const spinner = ref<InstanceType<typeof WheelSpinner>>()
 const infoDialogRef = ref<InstanceType<typeof MainInfoDialog>>()
@@ -36,7 +44,8 @@ const items = computed(() => prizeStore.prize?.items || [])
 const channel = new BroadcastChannel(GAME_MESSAGE_CHANNEL)
 
 let interval: ReturnType<typeof setInterval> | undefined = undefined
-let barcode: string = ''
+const barcode = ref<string>('')
+const isReceivingText = ref<boolean>(false)
 const isProcessing = ref<boolean>(false)
 const isPrizeShow = ref<boolean>(false)
 const isInfoShow = ref<boolean>(false)
@@ -44,12 +53,18 @@ const prizeDrop = ref<PrizeData>()
 const isEmptyPrize = computed(() => (prizeStore.prize?.items || []).filter((item) => item.usage < item.qty).length < 1)
 const firstPrizeId = computed(() => ((prizeStore.prize?.items || []).find((item) => item.is_first) || {}).id)
 
-function handleOnStartSpin() {
-  if (isPlaying.value || isEmptyPrize.value) return
+function getPrize(empId: string, name: string): PrizeData | undefined {
   const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
   if (!prize) return
-  console.log(prize.id, prize.label)
   prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
+  historyStore.add(empId, name, prize.id)
+  return prize
+}
+
+function handleOnStartSpin() {
+  if (isPlaying.value || isEmptyPrize.value) return
+  const prize = getPrize('test-001', 'test user')
+  if (!prize) return
   prizeDrop.value = prize
   spinner.value?.spin(prize.id)
 }
@@ -67,10 +82,9 @@ async function handleOnProcessText(text: string) {
   try {
     const result = await api.verifyUser(text, 1)
     if (result.success) {
-      const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
+      const user = result.user
+      const prize = getPrize(user.emp_code, user.first_name + ' ' + user.last_name)
       if (!prize) return
-      console.log(prize.id, prize.label)
-      prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
       prizeDrop.value = prize
       spinner.value?.spin(prize.id)
     } else {
@@ -85,15 +99,20 @@ async function handleOnProcessText(text: string) {
 }
 
 function listenerBarcodeScanner(event: KeyboardEvent) {
-  // console.log(event.key, event.code)
+  isReceivingText.value = true
   if (event.code === 'F12') event.preventDefault()
   if (interval) clearInterval(interval)
-  if (event.code === 'Enter') handleOnProcessText(barcode)
-  if (event.key !== 'Shift') {
-    barcode += event.key
-    // console.log(event.key, barcode)
+  if (event.code === 'Enter') {
+    handleOnProcessText(barcode.value)
+    barcode.value = ''
   }
-  interval = setInterval(() => (barcode = ''), 20)
+  if (event.key !== 'Shift' && event.key !== 'Clear') {
+    barcode.value += event.key
+  }
+  interval = setInterval(() => {
+    barcode.value = ''
+    isReceivingText.value = false
+  }, 30)
 }
 
 function handleOnSpinEnd() {

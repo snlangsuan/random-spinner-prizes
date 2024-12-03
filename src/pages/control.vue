@@ -80,7 +80,7 @@ const prizeStore = usePrizeStore()
 const customDialogRef = ref<InstanceType<typeof CustomDialog>>()
 const isDialogShow = ref<boolean>(false)
 const isLoading = ref<boolean>(false)
-const maxItems = ref<number>(20)
+const maxItems = ref<number>(12)
 const editPrizeItem = ref<PrizeData>({
   id: '',
   label: '',
@@ -263,6 +263,10 @@ function writeFile(content: string) {
   link.click()
   URL.revokeObjectURL(link.href)
 }
+
+definePageMeta({
+  layout: 'management',
+})
 
 useHead({
   title: 'จัดการของรางวัล',

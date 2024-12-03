@@ -26,24 +26,24 @@ export const convDataURL = (image: File | Blob): Promise<string> => {
 export const weightedRandom = (items: Array<PrizeData>): PrizeData | undefined => {
   const shuffleItems = items.map((item) => ({ ...item })).sort(() => Math.random() - 0.5)
   const weights = shuffleItems.map((item) => item.weight * 100)
-  const totalWeight = weights.reduce((sum, i) => sum + i, 0)
-  const randomNumber = Math.floor(Math.random() * totalWeight) + 1
-  let currentWeight = 0
-  for (let itemIndex = 0; itemIndex < weights.length; itemIndex++) {
-    currentWeight += weights[itemIndex]
-    if (randomNumber <= currentWeight) {
+  // const totalWeight = weights.reduce((sum, i) => sum + i, 0)
+  // const randomNumber = Math.floor(Math.random() * totalWeight) + 1
+  // let currentWeight = 0
+  // for (let itemIndex = 0; itemIndex < weights.length; itemIndex++) {
+  //   currentWeight += weights[itemIndex]
+  //   if (randomNumber <= currentWeight) {
+  //     return shuffleItems[itemIndex]
+  //   }
+  // }
+  const cumulativeWeights: number[] = []
+  for (let i = 0; i < weights.length; i += 1) {
+    cumulativeWeights[i] = weights[i] + (cumulativeWeights[i - 1] || 0)
+  }
+  const maxCumulativeWeight = cumulativeWeights[cumulativeWeights.length - 1]
+  const randomNumber = maxCumulativeWeight * Math.random()
+  for (let itemIndex = 0; itemIndex < shuffleItems.length; itemIndex += 1) {
+    if (cumulativeWeights[itemIndex] >= randomNumber) {
       return shuffleItems[itemIndex]
     }
   }
-  // const cumulativeWeights: number[] = []
-  // for (let i = 0; i < weights.length; i += 1) {
-  //   cumulativeWeights[i] = weights[i] + (cumulativeWeights[i - 1] || 0)
-  // }
-  // const maxCumulativeWeight = cumulativeWeights[cumulativeWeights.length - 1]
-  // const randomNumber = maxCumulativeWeight * Math.random()
-  // for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
-  //   if (cumulativeWeights[itemIndex] >= randomNumber) {
-  //     return items[itemIndex]
-  //   }
-  // }
 }
