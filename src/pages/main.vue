@@ -108,15 +108,18 @@ function listenerBarcodeScanner(event: KeyboardEvent) {
   }
   if (event.key !== 'Shift' && event.key !== 'Clear') {
     barcode.value += event.key
+    console.log(barcode.value)
   }
   interval = setInterval(() => {
     barcode.value = ''
     isReceivingText.value = false
-  }, 30)
+  }, 100)
 }
 
 function handleOnSpinEnd() {
-  isProcessing.value = false
+  setTimeout(() => {
+    isProcessing.value = false
+  }, 2000)
   isPrizeShow.value = true
 }
 

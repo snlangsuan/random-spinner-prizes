@@ -21,6 +21,7 @@
           </div>
         </div>
       </div>
+      <div class="text-center" :style="{ marginTop: '-24px' }">จะปิดภายใน {{ countClose }} วินาที</div>
     </div>
   </v-overlay>
 </template>
@@ -42,6 +43,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const countClose = ref<number>(5)
+let interval: ReturnType<typeof setInterval> | undefined = undefined
 const isOpen = computed({
   get() {
     return props.modelValue
@@ -54,6 +57,22 @@ const isOpen = computed({
 function handleOnClose() {
   isOpen.value = false
 }
+
+function handleOnClearInterval() {
+  countClose.value = countClose.value - 1
+  if (countClose.value <= 0) {
+    clearInterval(interval)
+    isOpen.value = false
+  }
+}
+
+watch(isOpen, (val) => {
+  if (val) {
+    if (interval) clearInterval(interval)
+    countClose.value = 2
+    interval = setInterval(handleOnClearInterval, 1000)
+  }
+})
 </script>
 
 <style lang="scss" scoped>

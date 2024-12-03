@@ -145,7 +145,6 @@ function render() {
 }
 
 function loadSound() {
-  console.log(runtimeConfig.app.baseURL)
   emit('update:loading', true)
   player = new Audio(`${runtimeConfig.app.baseURL}sounds/spinning-eff.mp3`)
   player.preload = 'auto'
