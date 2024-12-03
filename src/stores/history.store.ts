@@ -36,5 +36,10 @@ export const useHistoryStore = defineStore('prize.history.store', () => {
     history.value?.items.splice(idx, 1)
   }
 
-  return { history, add, remove }
+  function find(publicId: string): IHistoryStoreItem | undefined {
+    const item = history.value?.items.find((item) => item.public_id === publicId)
+    return item
+  }
+
+  return { history, add, remove, find }
 })

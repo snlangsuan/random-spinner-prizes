@@ -33,6 +33,7 @@ import { GAME_MESSAGE_CHANNEL } from '~/constants/game'
 import type WheelSpinner from '~/components/WheelSpinner.vue'
 import type { PrizeData } from '~/types/prize.d'
 import type { IGameStage } from '~/types/game.d'
+import type { IUserInfo } from '~/types/api'
 
 const prizeStore = usePrizeStore()
 const historyStore = useHistoryStore()
@@ -69,6 +70,14 @@ function handleOnStartSpin() {
   spinner.value?.spin(prize.id)
 }
 
+async function addLog(user: IUserInfo, prizeId: string) {
+  try {
+    await api.addGameLogger(Number(user.emp_code), 1, prizeId)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 async function handleOnProcessText(text: string) {
   if (!/^https:\/\/im\.jts/.test(text)) return
   if (isProcessing.value) return
@@ -82,14 +91,23 @@ async function handleOnProcessText(text: string) {
   try {
     const result = await api.verifyUser(text, 1)
     if (result.success) {
-      const user = result.user
+      const user = result.user!
       const prize = getPrize(user.emp_code, user.first_name + ' ' + user.last_name)
       if (!prize) return
+      await addLog(user, prize.id)
       prizeDrop.value = prize
       spinner.value?.spin(prize.id)
     } else {
       isProcessing.value = false
-      infoDialogRef.value?.open({ title: 'แจ้งเตือน', message: 'ไม่พบข้อมูลการลงทะเบียน' })
+      const message =
+        result.message === 'คุณใช้สิทธิ์เล่นเกมไปแล้ว'
+          ? 'คุณเล่นกิจกรรมไปแล้ว แล้วพบกันใหม่กิจกรรมหน้า!'
+          : 'ไม่พบข้อมูลการลงทะเบียน'
+
+      infoDialogRef.value?.open({
+        title: 'แจ้งเตือน',
+        message,
+      })
     }
   } catch (error) {
     console.log(error)
