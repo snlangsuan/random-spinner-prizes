@@ -144,7 +144,7 @@ function render() {
 
 function loadSound() {
   emit('update:loading', true)
-  player = new Audio('/sounds/spinning-eff.mp3')
+  player = new Audio('sounds/spinning-eff.mp3')
   player.preload = 'auto'
 }
 
