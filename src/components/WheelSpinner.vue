@@ -214,13 +214,11 @@ defineExpose({ spin, render })
 .wheel-spinner {
   &__container {
     display: block;
-    // width: 500px;
-    // height: 500px;
     position: relative;
     overflow: hidden;
     user-select: none;
     border-radius: 50%;
-    box-shadow: 1px 1.5px 5.5px 4.5px rgba(0, 0, 0, 0.1);
+    box-shadow: 1px 1.5px 5.5px 4.5px rgba(0, 0, 0, 0.25);
   }
 
   &__border {

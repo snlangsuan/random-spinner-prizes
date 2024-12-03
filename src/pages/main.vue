@@ -1,7 +1,7 @@
 <template>
-  <v-container class="fill-height" style="background-color: #fff8e1" fluid>
+  <v-container class="fill-height main-background" fluid>
     <v-row class="fill-height align-center justify-center">
-      <div class="text-center">
+      <div class="text-center" :style="{ marginTop: '-58px' }">
         <wheel-spinner
           ref="spinner"
           v-model:playing="isPlaying"
@@ -162,3 +162,15 @@ useHead({
   title: 'Wheel Lucky',
 })
 </script>
+
+<style lang="scss" scoped>
+.main-background {
+  width: 900px !important;
+  height: 1600px !important;
+  background-color: #fff8e1;
+  background-image: url('~/assets/images/bg-spin.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+}
+</style>
