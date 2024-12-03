@@ -100,7 +100,7 @@ async function handleOnProcessText(text: string) {
     } else {
       isProcessing.value = false
       const message =
-        result.message === 'คุณใช้สิทธิ์เล่นเกมไปแล้ว'
+        result.errorMsg === 'คุณใช้สิทธิ์เล่นเกมไปแล้ว'
           ? 'คุณเล่นกิจกรรมไปแล้ว แล้วพบกันใหม่กิจกรรมหน้า!'
           : 'ไม่พบข้อมูลการลงทะเบียน'
 

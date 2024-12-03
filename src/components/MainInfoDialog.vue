@@ -13,12 +13,18 @@
             minHeight: '80px',
             backgroundColor: '#ffffff',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            borderRadius: '4px',
           }"
         >
           {{ options.message }}
+          <div class="text-caption text-center mt-4">กำลังปิดภายใน {{ countClose }} วินาที</div>
         </div>
+        <!-- <div class="text-caption text-center" :style="{ backgroundColor: '#ffffff', borderBottom: '4px' }">
+          กำลังปิดภายใน {{ countClose }} วินาที
+        </div> -->
       </v-card-text>
       <!-- <v-card-actions class="d-flex align-center justify-center">
         <v-btn variant="flat" color="#FEAF7A" style="width: 140px" @click="handleOnCancel">
@@ -30,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IConfirmDialogOption } from '~/types/shared.d'
+import type { ICustomDialogOption } from '~/types/custom.dialog'
 
 const props = defineProps({
   modelValue: {
@@ -38,12 +44,15 @@ const props = defineProps({
     default: false,
   },
   options: {
-    type: Object as PropType<IConfirmDialogOption>,
+    type: Object as PropType<ICustomDialogOption>,
     default: () => ({}),
   },
 })
 
 const emit = defineEmits(['update:modelValue'])
+
+const countClose = ref<number>(5)
+let interval: ReturnType<typeof setInterval> | undefined = undefined
 
 const isOpen = computed({
   get() {
@@ -57,11 +66,11 @@ const isOpen = computed({
 const mResolve = ref<(isConfirm: boolean) => void>()
 const mReject = ref<(error: Error) => void>()
 
-const mOption = ref<IConfirmDialogOption>({})
+const mOption = ref<ICustomDialogOption>({})
 
 const options = computed(() => (Object.keys(props.options).length > 0 ? props.options : mOption.value))
 
-function open(options: IConfirmDialogOption) {
+function open(options: ICustomDialogOption) {
   mOption.value = options
   isOpen.value = true
   return new Promise((resolve, reject) => {
@@ -74,6 +83,22 @@ function handleOnCancel() {
   if (mResolve.value) mResolve.value(false)
   isOpen.value = false
 }
+
+function handleOnClearInterval() {
+  countClose.value = countClose.value - 1
+  if (countClose.value <= 0) {
+    clearInterval(interval)
+    isOpen.value = false
+  }
+}
+
+watch(isOpen, (val) => {
+  if (val) {
+    if (interval) clearInterval(interval)
+    countClose.value = 2
+    interval = setInterval(handleOnClearInterval, 1000)
+  }
+})
 
 defineExpose({ open })
 </script>

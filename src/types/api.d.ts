@@ -34,7 +34,7 @@ export interface IVerifyUserRequestBody {
 export interface IVerifyUserResponse {
   success: boolean
   user?: IUserInfo
-  message?: string
+  errorMsg?: string
 }
 
 export interface IGameLoggerRequestBody {

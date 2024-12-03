@@ -21,7 +21,7 @@
           </div>
         </div>
       </div>
-      <div class="text-center" :style="{ marginTop: '-24px' }">จะปิดภายใน {{ countClose }} วินาที</div>
+      <div class="text-center text-white" :style="{ marginTop: '-24px' }">กำลังปิดภายใน {{ countClose }} วินาที</div>
     </div>
   </v-overlay>
 </template>
