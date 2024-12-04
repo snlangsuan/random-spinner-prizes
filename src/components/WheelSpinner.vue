@@ -182,13 +182,17 @@ function initLight(maxItems: number = 24) {
   //   elements[0].classList.add('wheel-spinner-light__dot--open')
   // }, 1000)
 
-  let count = 0
+  let count: boolean = true
   setInterval(() => {
-    count += 1
-    if (count >= maxItems) count = 0
+    // count += 1
+    // if (count >= maxItems) count = 0
+    // elements.forEach((item) => item && item.classList.remove('wheel-spinner-light__dot--open'))
+    // elements[count].classList.add('wheel-spinner-light__dot--open')
+    const target = (i: number) => (count ? i % 2 === 0 : i % 2 > 0)
     elements.forEach((item) => item && item.classList.remove('wheel-spinner-light__dot--open'))
-    elements[count].classList.add('wheel-spinner-light__dot--open')
-  }, 30)
+    elements.filter((_elm, i) => target(i)).forEach((elm) => elm.classList.add('wheel-spinner-light__dot--open'))
+    count = !count
+  }, 200)
 }
 
 function loadSound() {
