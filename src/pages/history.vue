@@ -6,7 +6,7 @@
       <div class="d-flex align-center" style="gap: 8px">
         <v-btn variant="flat" rounded @click="handleOnReset">
           <template #prepend>
-            <v-icon>mdi-gift-outline</v-icon>
+            <v-icon>mdi-refresh</v-icon>
           </template>
           รีเซ็ตประวัติ
         </v-btn>
