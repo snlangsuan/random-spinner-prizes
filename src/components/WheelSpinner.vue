@@ -1,5 +1,19 @@
 <template>
   <div :id="uid" class="wheel-spinner__container" :style="{ width: `${wheelWidth}px`, height: `${wheelHeight}px` }">
+    <ul class="wheel-spinner-light">
+      <!-- <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" />
+      <li class="wheel-spinner-light__dot" /> -->
+    </ul>
     <div class="wheel-spinner__border" />
     <div
       class="wheel-spinner__base"
@@ -144,6 +158,39 @@ function render() {
   })
 }
 
+function initLight(maxItems: number = 24) {
+  const rx = 328
+  const ry = 328
+  const so = 10
+  const light = document.querySelector('.wheel-spinner-light')
+  // console.log(lights)
+  // lights[0].style.top = '20px'
+  // lights[3].style.top = '20px'
+  const elements: Array<HTMLElement> = []
+  for (let i = 0; i < maxItems; i++) {
+    const m = document.createElement('li')
+    m.classList.add('wheel-spinner-light__dot')
+    // m.classList.add(i % 2 === 0 ? 'wheel-spinner-light__dot--even' : 'wheel-spinner-light__dot--odd')
+    m.classList.add('wheel-spinner-light__dot--odd')
+    m.style.top = `${ry + -ry * Math.cos((360 / maxItems / 180) * (i + so) * Math.PI) + 8}px`
+    m.style.left = `${rx + rx * Math.sin((360 / maxItems / 180) * (i + so) * Math.PI) + 8}px`
+    elements.push(m)
+    light?.appendChild(m)
+  }
+
+  // setTimeout(() => {
+  //   elements[0].classList.add('wheel-spinner-light__dot--open')
+  // }, 1000)
+
+  let count = 0
+  setInterval(() => {
+    count += 1
+    if (count >= maxItems) count = 0
+    elements.forEach((item) => item && item.classList.remove('wheel-spinner-light__dot--open'))
+    elements[count].classList.add('wheel-spinner-light__dot--open')
+  }, 30)
+}
+
 function loadSound() {
   emit('update:loading', true)
   player = new Audio(`${runtimeConfig.app.baseURL}sounds/spinning-eff.mp3`)
@@ -203,6 +250,7 @@ function spin(id: number | string) {
 }
 
 onMounted(() => {
+  initLight()
   render()
   loadSound()
 })
@@ -227,8 +275,14 @@ defineExpose({ spin, render })
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #e65506;
-    background-image: url('~/assets/images/bg-wheel.png');
+    background: rgb(255, 212, 179);
+    background: radial-gradient(
+      circle,
+      rgba(255, 212, 179, 1) 0%,
+      rgba(252, 184, 142, 1) 30%,
+      rgba(236, 112, 46, 1) 100%
+    );
+    // background-image: url('~/assets/images/bg-wheel.png');
     // border: 4px solid #000000;
     border-radius: 50%;
     background-repeat: no-repeat;
@@ -259,6 +313,57 @@ defineExpose({ spin, render })
     position: absolute;
     top: 0;
     left: 0;
+  }
+
+  &-light {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+    list-style: none;
+
+    & :deep(.wheel-spinner-light__dot) {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    // & :deep(.wheel-spinner-light__dot--even) {
+    //   background: rgb(183, 72, 35);
+    // }
+
+    // & :deep(.wheel-spinner-light__dot--odd) {
+    //   background: rgb(211, 201, 147);
+    // }
+
+    & :deep(.wheel-spinner-light__dot--even.wheel-spinner-light__dot--open) {
+      background: rgba(211, 81, 36, 1);
+      box-shadow:
+        inset 0px 0px 10px 1px rgba(255, 255, 255, 0.35),
+        0px 0px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    & :deep(.wheel-spinner-light__dot--odd.wheel-spinner-light__dot--open) {
+      background: rgba(253, 241, 177, 1);
+      box-shadow:
+        inset 0px 0px 10px 1px rgba(255, 255, 255, 0.35),
+        0px 0px 10px rgba(255, 255, 255, 0.2);
+      animation-duration: 0.01s;
+      animation-name: opening;
+    }
+  }
+
+  @keyframes opening {
+    from {
+      opacity: 0.1;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    to {
+      opacity: 1;
+      background: rgba(253, 241, 177, 1);
+    }
   }
 }
 </style>

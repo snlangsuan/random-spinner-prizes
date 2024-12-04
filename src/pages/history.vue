@@ -2,6 +2,15 @@
   <v-container fluid>
     <v-toolbar density="compact" color="transparent">
       <v-toolbar-title>ประวัติการออกรางวัล</v-toolbar-title>
+      <v-spacer />
+      <div class="d-flex align-center" style="gap: 8px">
+        <v-btn variant="flat" rounded @click="handleOnReset">
+          <template #prepend>
+            <v-icon>mdi-gift-outline</v-icon>
+          </template>
+          รีเซ็ตประวัติ
+        </v-btn>
+      </div>
     </v-toolbar>
     <v-card color="grey-lighten-2" variant="outlined" flat>
       <v-data-table
@@ -23,6 +32,7 @@
         </template>
       </v-data-table>
     </v-card>
+    <custom-dialog ref="customDialogRef" v-model="isDialogShow" />
   </v-container>
 </template>
 
@@ -31,9 +41,12 @@ import dayjs from 'dayjs';
 import { useHistoryStore } from '~/stores/history.store'
 import { usePrizeStore } from '~/stores/prize.store'
 import type { THeaders } from '~/types/vuetify'
+import type CustomDialog from '~/components/CustomDialog.vue'
 
 const historyStore = useHistoryStore()
 const prizeStore = usePrizeStore()
+const customDialogRef = ref<InstanceType<typeof CustomDialog>>()
+const isDialogShow = ref<boolean>(false)
 const headers = ref<THeaders>([
   {
     title: '#',
@@ -82,6 +95,18 @@ function getPrize(id: string): string {
 
 function getDateFormat(timestamp: number): string {
   return dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
+}
+
+async function handleOnReset() {
+  const confirm = await customDialogRef.value?.open({
+    html: `คุณต้องการล้างประวัติการออกรางวัลใช่หรือไม่`,
+    confirmLabel: 'ล้างประวัติ',
+    type: 'error',
+    showCancelButton: true,
+    showConfirmButton: true,
+  })
+  if (!confirm) return
+  historyStore.reset()
 }
 
 definePageMeta({

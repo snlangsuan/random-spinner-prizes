@@ -167,10 +167,10 @@ useHead({
 .main-background {
   width: 900px !important;
   height: 1600px !important;
-  background-color: #fff8e1;
+  background-color: #fef7d9;
   background-image: url('~/assets/images/bg-spin.png');
   background-repeat: no-repeat;
   background-size: contain;
-  background-position: center;
+  background-position: top center;
 }
 </style>
