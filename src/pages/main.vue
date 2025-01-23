@@ -148,8 +148,19 @@ function handleOnReceiveControl(e: MessageEvent) {
     spinner.value?.render()
   }
 }
-
+async function fetchPrizes() {
+  try {
+    const DbRealtime = await api.getPrizeFirebase()
+    console.log({ DbRealtime })
+    if (items) {
+      // prizes.value = items
+    }
+  } catch (error) {
+    console.error('Error fetching prizes:', error)
+  }
+}
 onMounted(() => {
+  fetchPrizes()
   window.addEventListener('keydown', listenerBarcodeScanner)
   channel.addEventListener('message', handleOnReceiveControl)
 })

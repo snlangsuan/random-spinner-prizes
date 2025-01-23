@@ -46,7 +46,7 @@
     <prize-table
       :data="prizeItems"
       @edit="handleOnEditPrize"
-      @remove="handleOnRemovePrize"
+      @remove="handleOnRemovePrizeOnFirebase"
       @up="handleOnMoveUp"
       @down="handleOnMoveDown"
     />
@@ -75,10 +75,24 @@ import * as d3 from 'd3'
 import type CustomDialog from '~/components/CustomDialog.vue'
 import type { PrizeData } from '~/types/prize.d'
 import { useUserStore } from '~/stores/user.store'
-
+const api = useApi()
 const userStore = useUserStore()
+// api
+
+async function fetchPrizes() {
+  try {
+    const DbRealtime = await api.getPrizeFirebase()
+    console.log({ DbRealtime })
+    if (DbRealtime) {
+      prizeItems.value = DbRealtime.items
+    }
+  } catch (error) {
+    console.error('Error fetching prizes:', error)
+  }
+}
 
 onMounted(() => {
+  fetchPrizes()
   userStore.checkAuthState()
 })
 
@@ -98,8 +112,9 @@ const editPrizeItem = ref<PrizeData>({
 })
 const isEditFormOpen = ref<boolean>(false)
 const isEditMode = ref<boolean>(false)
-
-const prizeItems = computed(() => prizeStore.prize?.items || [])
+const prizeFirebase = ref<PrizeData | null>(null)
+// const prizeItems = computed(() => prizeStore.prize?.items || [])
+const prizeItems = ref([])
 const totalWeight = computed(() => prizeItems.value.reduce((total, item) => total + item.weight, 0))
 const maxWeight = computed(() => 1 - totalWeight.value)
 const prizeIds = computed(() => prizeItems.value.map((item) => item.id))
@@ -120,13 +135,19 @@ function handleOnCreatePrize() {
   isEditFormOpen.value = true
 }
 
-function handleOnSavePrize() {
+async function handleOnSavePrize() {
   if (isEditMode.value) {
     const oldItem = prizeItems.value.find((item) => item.id === editPrizeItem.value.id) ?? {}
     const item = Object.assign(oldItem, editPrizeItem.value)
-    prizeStore.updatePrize(editPrizeItem.value.id, item)
+    console.log({ itemEdit: item })
+    const index = prizeItems.value.findIndex((item) => item.id === editPrizeItem.value.id)
+    await api.updatePrizeItemById(index, item)
+    await fetchPrizes()
+    // prizeStore.updatePrize(editPrizeItem.value.id, item)
   } else {
-    prizeStore.addPrize(editPrizeItem.value)
+    // prizeStore.addPrize(editPrizeItem.value)
+    await api.addPrizeItemWithIndex(editPrizeItem.value)
+    await fetchPrizes()
   }
   isEditMode.value = false
   isEditFormOpen.value = false
@@ -140,6 +161,20 @@ function handleOnEditPrize(id: string) {
   isEditFormOpen.value = true
 }
 
+async function handleOnRemovePrizeOnFirebase(id: string) {
+  await api.removePrizeItemByKey(id)
+  const confirm = await customDialogRef.value?.open({
+    html: `คุณต้องการลบ <strong>${'prize.label'} (${'prize.id'})</strong> ออกจากรายการของรางวัลหรือไม่`,
+    confirmLabel: 'ลบ',
+    type: 'error',
+    showCancelButton: true,
+    showConfirmButton: true,
+  })
+  if (confirm) {
+    await api.removePrizeItemByKey(id)
+    await fetchPrizes()
+  }
+}
 async function handleOnRemovePrize(id: string) {
   const prize = prizeItems.value.find((item) => item.id === id)
   if (!prize) return
