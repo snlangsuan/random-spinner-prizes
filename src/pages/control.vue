@@ -74,6 +74,13 @@ import { GAME_MESSAGE_CHANNEL } from '~/constants/game'
 import * as d3 from 'd3'
 import type CustomDialog from '~/components/CustomDialog.vue'
 import type { PrizeData } from '~/types/prize.d'
+import { useUserStore } from '~/stores/user.store'
+
+const userStore = useUserStore()
+
+onMounted(() => {
+  userStore.checkAuthState()
+})
 
 const prizeStore = usePrizeStore()
 

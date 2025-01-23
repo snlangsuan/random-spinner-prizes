@@ -6321,6 +6321,16 @@ pinia-plugin-persistedstate@>=3.2.1:
     defu "^6.1.4"
     destr "^2.0.3"
 
+pinia-plugin-persistedstate@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/pinia-plugin-persistedstate/-/pinia-plugin-persistedstate-4.2.0.tgz#31973291b768bd84ce24e55083e7171b2f451ad1"
+  integrity sha512-3buhA7ac+ssbOIx3VRCC8oHkoFwhDM9oHRCjo7nj+O8WUqnW+jRqh7eYT5eS/DNa3H28zp3dYf/nd/Vc8zj8eQ==
+  dependencies:
+    "@nuxt/kit" "^3.14.1592"
+    deep-pick-omit "^1.2.1"
+    defu "^6.1.4"
+    destr "^2.0.3"
+
 pinia-shared-state@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/pinia-shared-state/-/pinia-shared-state-0.5.1.tgz#e5db31cc24b51263776c65cc3d4ca6b2350d61bb"

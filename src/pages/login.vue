@@ -6,12 +6,7 @@
           <v-card-title class="headline">Login</v-card-title>
           <v-card-text>
             <v-form ref="form" v-model="valid" lazy-validation>
-              <v-text-field
-                v-model="email"
-                label="Email"
-                :rules="emailRules"
-                required
-              ></v-text-field>
+              <v-text-field v-model="email" label="Email" :rules="emailRules" required></v-text-field>
               <v-text-field
                 v-model="password"
                 label="Password"
@@ -32,10 +27,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
-
+import { useUserStore } from '~/stores/user.store'
+const userStore = useUserStore()
 const email = ref('')
 const password = ref('')
 const valid = ref(false)
@@ -55,7 +50,8 @@ async function login() {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
     console.log('User logged in:', userCredential.user)
-    // router.push('/main')
+    userStore.setUid(userCredential.user.uid)
+    router.push('/control')
   } catch (error) {
     console.error('Error logging in:', error)
     alert('Login failed. Please check your credentials and try again.')
