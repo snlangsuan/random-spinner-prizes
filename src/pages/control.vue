@@ -226,7 +226,14 @@ async function handleOnReset() {
     showConfirmButton: true,
   })
   if (!result) return
-  prizeStore.resetUsage()
+  isLoading.value = true
+  for (let i = 0; i < prizeItems.value.length; i++) {
+    let item = prizeItems.value[i]
+    await api.updatePrizeItemById(i, { ...item, usage: 0 })
+  }
+  await fetchPrizes()
+  isLoading.value = false
+  // prizeStore.resetUsage()
 }
 
 function handleOnReloadScreen() {

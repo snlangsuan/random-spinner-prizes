@@ -198,6 +198,7 @@ const updatePrizeItemById = async (id: string, updatedItem: any): Promise<void> 
     console.error('Error updating item:', error)
   }
 }
+
 const clearPrizeHistory = async (): Promise<void> => {
   const { $database } = useNuxtApp()
   const historyRef = ref($database, 'prize/history')
@@ -209,7 +210,7 @@ const clearPrizeHistory = async (): Promise<void> => {
   }
 }
 
-  return { verifyUser, addGameLogger , getPrizeFirebase , removePrizeItemByKey ,addPrizeItem  , updatePrizeItemById , clearPrizeHistory,addHistoryItem }
+  return { verifyUser, addGameLogger , getPrizeFirebase , removePrizeItemByKey ,addPrizeItem  , updatePrizeItemById , clearPrizeHistory,addHistoryItem  }
   
 }
 
