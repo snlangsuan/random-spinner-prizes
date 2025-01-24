@@ -114,6 +114,7 @@ async function fetchHistory() {
     isLoading.value = false
   } catch (error) {
     console.error(error)
+    prizeItems.value = []
   } finally {
     isLoading.value = false
   }

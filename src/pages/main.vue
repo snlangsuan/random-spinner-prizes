@@ -23,7 +23,7 @@
     </div>
     <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
     <main-info-dialog ref="infoDialogRef" v-model="isInfoShow" />
-    <v-btn @click="() => handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB2')">test barcode</v-btn>
+    <v-btn @click="() => handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB22')">test barcode</v-btn>
   </v-container>
 </template>
 

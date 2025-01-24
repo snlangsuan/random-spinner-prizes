@@ -83,7 +83,6 @@ async function fetchPrizes() {
   try {
     isLoading.value = true
     const DbRealtime = await api.getPrizeFirebase()
-    console.log({ DbRealtime })
     if (DbRealtime.items && DbRealtime.items.length > 0) {
       prizeItems.value = DbRealtime.items
     }
@@ -143,7 +142,7 @@ function handleOnCreatePrize() {
 async function handleOnSavePrize() {
   isLoading.value = true
   if (isEditMode.value) {
-    editPrizeItem.value = { ...editPrizeItem.value, usage: 0 } // ??  usage 0 หายได้ 
+    editPrizeItem.value = { ...editPrizeItem.value, usage: 0 } // ??  usage 0 หายได้
     const oldItem = prizeItems.value.find((item) => item.id === editPrizeItem.value.id) ?? {}
     const item = Object.assign(oldItem, editPrizeItem.value)
     console.log({ itemEdit: item })
@@ -153,7 +152,7 @@ async function handleOnSavePrize() {
     isLoading.value = false
     // prizeStore.updatePrize(editPrizeItem.value.id, item)
   } else {
-    editPrizeItem.value = { ...editPrizeItem.value, usage: 0 } // ?? usage 0 หายได้ 
+    editPrizeItem.value = { ...editPrizeItem.value, usage: 0 } // ?? usage 0 หายได้
     editPrizeItem.value = { ...editPrizeItem.value, usage: 0 }
     // prizeStore.addPrize(editPrizeItem.value
     await api.addPrizeItem(editPrizeItem.value)
