@@ -33,6 +33,9 @@
       </v-data-table>
     </v-card>
     <custom-dialog ref="customDialogRef" v-model="isDialogShow" />
+    <v-overlay :model-value="isLoading" class="align-center justify-center">
+      <v-progress-circular color="primary" indeterminate />
+    </v-overlay>
   </v-container>
 </template>
 
@@ -50,6 +53,7 @@ const userStore = useUserStore()
 const customDialogRef = ref<InstanceType<typeof CustomDialog>>()
 const isDialogShow = ref<boolean>(false)
 const api = useApi()
+const isLoading = ref<boolean>(false)
 const headers = ref<THeaders>([
   {
     title: '#',
@@ -96,14 +100,22 @@ onMounted(() => {
   fetchHistory()
 })
 async function fetchHistory() {
-  const DbRealtime = await api.getPrizeFirebase()
-  if (DbRealtime.items && DbRealtime.items.length > 0) {
-    console.log({ DbRealtime })
-    items.value = DbRealtime.history
-  }
-  if (DbRealtime.history && DbRealtime.history.length > 0) {
-    console.log({ DbRealtime })
-    prizeItems.value = DbRealtime.items
+  try {
+    isLoading.value = true
+    const DbRealtime = await api.getPrizeFirebase()
+    if (DbRealtime.items && DbRealtime.items.length > 0) {
+      console.log({ DbRealtime })
+      items.value = DbRealtime.history
+    }
+    if (DbRealtime.history && DbRealtime.history.length > 0) {
+      console.log({ DbRealtime })
+      prizeItems.value = DbRealtime.items
+    }
+    isLoading.value = false
+  } catch (error) {
+    console.error(error)
+  } finally {
+    isLoading.value = false
   }
 }
 

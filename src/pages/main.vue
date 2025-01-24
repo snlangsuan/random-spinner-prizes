@@ -23,7 +23,7 @@
     </div>
     <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
     <main-info-dialog ref="infoDialogRef" v-model="isInfoShow" />
-    <!-- <v-btn @click="()=> handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB')">test barcode</v-btn> -->
+    <v-btn @click="() => handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB2')">test barcode</v-btn>
   </v-container>
 </template>
 
@@ -36,6 +36,7 @@ import type WheelSpinner from '~/components/WheelSpinner.vue'
 import type { PrizeData } from '~/types/prize.d'
 import type { IGameStage } from '~/types/game.d'
 import type { IUserInfo } from '~/types/api'
+import { v4 as uuidv4 } from 'uuid'
 
 const prizeStore = usePrizeStore()
 const historyStore = useHistoryStore()
@@ -56,15 +57,41 @@ const isInfoShow = ref<boolean>(false)
 const prizeDrop = ref<PrizeData>()
 const isEmptyPrize = ref<boolean>(false)
 const firstPrizeId = ref<string | undefined>()
+const isLoading = ref<boolean>(false)
 // const isEmptyPrize = computed(() => (prizeStore.prize?.items || []).filter((item) => item.usage < item.qty).length < 1)
 // const firstPrizeId = computed(() => ((prizeStore.prize?.items || []).find((item) => item.is_first) || {}).id)
 
-function getPrize(empId: string, name: string): PrizeData | undefined {
-  const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
-  if (!prize) return
-  prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
-  historyStore.add(empId, name, prize.id)
-  return prize
+async function getPrize(empId: string, name: string): PrizeData | undefined {
+  try {
+    const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
+    console.log('prize 01:', !prize)
+    if (!prize) {
+      return
+    }
+
+    // prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
+    // historyStore.add(empId, name, prize.id)
+    const index = items.value.findIndex((item) => item.id === prize.id)
+    await api.updatePrizeItemById(index, { ...prize, usage: prize.usage + 1 })
+    const saveHistory = {
+      id: uuidv4(),
+      public_id: empId,
+      name: name,
+      prize_id: prize.id,
+      created_at: Date.now(),
+    }
+    await api.addHistoryItem(saveHistory)
+    await fetchPrizes()
+    console.log('prize 02:', prize)
+    return prize
+  } catch (error) {
+    console.error(error)
+    const message = 'เกิดข้อผิดพลาดบางประการ กรุณาลองใหม่อีกครั้ง'
+    infoDialogRef.value?.open({
+      title: 'แจ้งเตือน',
+      message,
+    })
+  }
 }
 
 function handleOnStartSpin() {
@@ -77,7 +104,13 @@ function handleOnStartSpin() {
 
 async function addLog(user: IUserInfo, prizeId: string) {
   try {
-    await api.addGameLogger(user.id, 1, prizeId)
+    const dataAddLog = {
+      empId: user,
+      gameId: 1,
+      prizeId,
+    }
+    await api.addGameLogger(dataAddLog)
+    // await api.addGameLogger(user.id, 1, prizeId)
   } catch (error) {
     console.error(error)
   }
@@ -98,10 +131,12 @@ async function handleOnProcessText(text: string) {
     const result = await api.verifyUser(text, 1)
     console.log('result:', result)
     if (result.success) {
-      const user = result.user!
-      const prize = getPrize(String(user.id), user.first_name + ' ' + user.last_name)
+      // const user = result.user!
+      // const prize = getPrize(String(user.id), user.first_name + ' ' + user.last_name)
+      const prize = await getPrize(text, '-')
+      console.log('prize: 03', prize)
       if (!prize) return
-      await addLog(user, prize.id)
+      await addLog(text, prize.id)
       prizeDrop.value = prize
       spinner.value?.spin(prize.id)
     } else {
@@ -127,7 +162,7 @@ function listenerBarcodeScanner(event: KeyboardEvent) {
   isReceivingText.value = true
   if (event.code === 'F12') event.preventDefault()
   if (interval) clearInterval(interval)
-  if (event.code === 'Enter') { 
+  if (event.code === 'Enter') {
     handleOnProcessText(barcode.value)
     barcode.value = ''
   }
@@ -163,8 +198,9 @@ async function fetchPrizes() {
     if (DbRealtime && DbRealtime.items && DbRealtime.items.length > 0) {
       nextTick(() => {
         items.value = DbRealtime.items
-        isEmptyPrize.value = items.value.filter((item) => item.usage < item.qty).length < 1
-        firstPrizeId.value = (items.value.find((item) => item.is_first) || {}).id
+        // console.log('isEmptyPrize:', DbRealtime.items.value.filter((item) => item.usage < item.qty).length < 1)
+        isEmptyPrize.value = (DbRealtime.items || []).filter((item) => item.usage < item.qty).length < 1
+        firstPrizeId.value = ((DbRealtime.items || []).find((item) => item.is_first) || {}).id
         console.log('items:', items.value)
         spinner.value?.render()
       })

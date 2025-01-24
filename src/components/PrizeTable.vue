@@ -83,13 +83,13 @@ const props = defineProps({
 const emit = defineEmits(['edit', 'remove', 'up', 'down', 'reset'])
 
 const headers = ref<THeaders>([
-  {
-    title: 'เริ่มต้น',
-    align: 'center',
-    key: 'first_item',
-    sortable: false,
-    width: 120,
-  },
+  // {
+  //   title: 'เริ่มต้น',
+  //   align: 'center',
+  //   key: 'first_item',
+  //   sortable: false,
+  //   width: 120,
+  // },
   {
     title: 'ไอดี',
     align: 'start',

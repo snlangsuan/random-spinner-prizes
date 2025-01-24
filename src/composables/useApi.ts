@@ -9,36 +9,92 @@ import { ref, child, get, update  ,push, set} from 'firebase/database'
 
 
 export const useApi = () => {
-  const verifyUser = async (link: string, gameId: number): Promise<IVerifyUserResponse> => {
-    const body: IVerifyUserRequestBody = {
-      link,
-      game_id: gameId,
-    }
-    const result = await $fetch<IVerifyUserResponse>(
-      'https://townhall.peepshare.me/api/v1/user/event/game/check/play',
-      {
-        method: 'POST',
-        body,
+  // const verifyUser = async (link: string, gameId: number): Promise<IVerifyUserResponse> => {
+  //   const body: IVerifyUserRequestBody = {
+  //     link,
+  //     game_id: gameId,
+  //   }
+  //   const result = await $fetch<IVerifyUserResponse>(
+  //     'https://townhall.peepshare.me/api/v1/user/event/game/check/play',
+  //     {
+  //       method: 'POST',
+  //       body,
+  //     }
+  //   )
+  //   return result
+  // }
+  const verifyUser = async (link: string, gameId: number) => {
+    try {
+      const data = await getPrizeFirebase()
+      const { players } = data;
+      console.log("players",players)
+      if (players && players.length > 0) {
+        if(players.some((value: any) => value.empId === link)){
+          return {
+          success: false,
+          msg : "",
+          errorMsg: "คุณใช้สิทธิ์เล่นเกมไปแล้ว"
+        };
+        }else{
+          return {
+            success: true,
+            msg : "เล่นเกมได้",
+            errorMsg: ""
+          };
+        }
+        
+      }else{
+        return {
+          "success": true,
+          "errorMsg": ""
       }
-    )
-    return result
-  }
-
-  const addGameLogger = async (empId: number, gameId: number, reward: string): Promise<IGameLoggerResponse> => {
-    const body: IGameLoggerRequestBody = {
-      emp_id: empId,
-      game_id: gameId,
-      reward,
-    }
-    const result = await $fetch<IGameLoggerResponse>(
-      'https://townhall.peepshare.me/api/v1/user/event/game/reward/save',
-      {
-        method: 'POST',
-        body,
       }
-    )
-    return result
+    } catch (error) {
+      return {
+        success: false,
+        errorMsg: "เกิดข้อผิดพลาด"
+      };
   }
+}
+  const addGameLogger = async (item: any): Promise<void> => {
+    console.log("addGameLogger", item)
+    const { $database } = useNuxtApp()
+    const dbRef = ref($database, 'prize/players')
+    try {
+      const snapshot = await get(dbRef)
+      let newIndex = 0
+      if (snapshot.exists()) {
+        const items = snapshot.val()
+        const keys = Object.keys(items)
+        console.log('keys:', keys)
+        if (keys.length > 0) {
+          const lastKey = keys[keys.length - 1]
+          const lastIndex = lastKey
+          newIndex = Number(lastIndex) + 1
+        }
+      }
+      const newItemRef = ref($database, `prize/players/${newIndex}`)
+      await set(newItemRef, item)
+      console.log('Item has been addGameLogger:', newIndex)
+    } catch (error) {
+      console.error('Error adding addGameLogger:', error)
+    }
+  }
+  // const addGameLogger = async (empId: number, gameId: number, reward: string): Promise<IGameLoggerResponse> => {
+  //   const body: IGameLoggerRequestBody = {
+  //     emp_id: empId,
+  //     game_id: gameId,
+  //     reward,
+  //   }
+  //   const result = await $fetch<IGameLoggerResponse>(
+  //     'https://townhall.peepshare.me/api/v1/user/event/game/reward/save',
+  //     {
+  //       method: 'POST',
+  //       body,
+  //     }
+  //   )
+  //   return result
+  // }
 
  const getPrizeFirebase = async (): Promise<any> => {
   const { $database } = useNuxtApp()
@@ -83,17 +139,8 @@ const removePrizeItemByKey = async (key: string): Promise<void> => {
   }
   
 }
+
 const addPrizeItem = async (item: any): Promise<void> => {
-  const { $database } = useNuxtApp()
-  const dbRef = ref($database, 'prize/items')
-  try {
-    await push(dbRef, item)
-    console.log('Item has been added')
-  } catch (error) {
-    console.error('Error adding item:', error)
-  }
-}
-const addPrizeItemWithIndex = async (item: any): Promise<void> => {
   const { $database } = useNuxtApp()
   const dbRef = ref($database, 'prize/items')
   try {
@@ -114,6 +161,30 @@ const addPrizeItemWithIndex = async (item: any): Promise<void> => {
     console.log('Item has been added with index:', newIndex)
   } catch (error) {
     console.error('Error adding item with index:', error)
+  }
+}
+const addHistoryItem = async (item: any): Promise<void> => {
+  console.log(addHistoryItem, item)
+  const { $database } = useNuxtApp()
+  const dbRef = ref($database, 'prize/history')
+  try {
+    const snapshot = await get(dbRef)
+    let newIndex = 0
+    if (snapshot.exists()) {
+      const items = snapshot.val()
+      const keys = Object.keys(items)
+      console.log('keys:', keys)
+      if (keys.length > 0) {
+        const lastKey = keys[keys.length - 1]
+        const lastIndex = lastKey
+        newIndex = Number(lastIndex) + 1
+      }
+    }
+    const newItemRef = ref($database, `prize/history/${newIndex}`)
+    await set(newItemRef, item)
+    console.log('Item has been addHistoryItem:', newIndex)
+  } catch (error) {
+    console.error('Error adding addHistoryItem:', error)
   }
 }
 const updatePrizeItemById = async (id: string, updatedItem: any): Promise<void> => {
@@ -138,7 +209,7 @@ const clearPrizeHistory = async (): Promise<void> => {
   }
 }
 
-  return { verifyUser, addGameLogger , getPrizeFirebase , removePrizeItemByKey ,addPrizeItem ,addPrizeItemWithIndex , updatePrizeItemById , clearPrizeHistory }
+  return { verifyUser, addGameLogger , getPrizeFirebase , removePrizeItemByKey ,addPrizeItem  , updatePrizeItemById , clearPrizeHistory,addHistoryItem }
   
 }
 

@@ -143,6 +143,7 @@ function handleOnCreatePrize() {
 async function handleOnSavePrize() {
   isLoading.value = true
   if (isEditMode.value) {
+    editPrizeItem.value = { ...editPrizeItem.value, usage: 0 } // ??  usage 0 หายได้ 
     const oldItem = prizeItems.value.find((item) => item.id === editPrizeItem.value.id) ?? {}
     const item = Object.assign(oldItem, editPrizeItem.value)
     console.log({ itemEdit: item })
@@ -152,8 +153,10 @@ async function handleOnSavePrize() {
     isLoading.value = false
     // prizeStore.updatePrize(editPrizeItem.value.id, item)
   } else {
-    // prizeStore.addPrize(editPrizeItem.value)
-    await api.addPrizeItemWithIndex(editPrizeItem.value)
+    editPrizeItem.value = { ...editPrizeItem.value, usage: 0 } // ?? usage 0 หายได้ 
+    editPrizeItem.value = { ...editPrizeItem.value, usage: 0 }
+    // prizeStore.addPrize(editPrizeItem.value
+    await api.addPrizeItem(editPrizeItem.value)
     await fetchPrizes()
     isLoading.value = false
   }
@@ -170,8 +173,9 @@ function handleOnEditPrize(id: string) {
 }
 
 async function handleOnRemovePrizeOnFirebase(id: string) {
+  const label = prizeItems.value.find((item) => item.id === id)?.label
   const confirm = await customDialogRef.value?.open({
-    html: `คุณต้องการลบ <strong>${''} (${id})</strong> ออกจากรายการของรางวัลหรือไม่`,
+    html: `คุณต้องการลบ <strong>${label} (${id})</strong> ออกจากรายการของรางวัลหรือไม่`,
     confirmLabel: 'ลบ',
     type: 'error',
     showCancelButton: true,
@@ -228,6 +232,7 @@ async function handleOnReset() {
 
 function handleOnReloadScreen() {
   channel.postMessage({ reload: true })
+  // await fetchPrizes()
 }
 
 async function handleOnImportPrizes() {
@@ -244,7 +249,7 @@ async function handleOnImportPrizes() {
           console.log({ handleOnImportPrizes: data })
           isLoading.value = true
           for (const value of data) {
-            await api.addPrizeItemWithIndex(value)
+            await api.addPrizeItem(value)
             await fetchPrizes()
             await new Promise((resolve) => setTimeout(resolve, 10))
           }
