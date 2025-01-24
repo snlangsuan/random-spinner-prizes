@@ -23,7 +23,7 @@
     </div>
     <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
     <main-info-dialog ref="infoDialogRef" v-model="isInfoShow" />
-    <v-btn @click="() => handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB22')">test barcode</v-btn>
+    <!-- <v-btn @click="() => handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB22')">test barcode</v-btn> -->
     <v-overlay :model-value="isLoading" class="align-center justify-center">
       <v-progress-circular color="primary" indeterminate />
     </v-overlay>
@@ -67,7 +67,6 @@ const isLoading = ref<boolean>(false)
 async function getPrize(empId: string, name: string): PrizeData | undefined {
   try {
     const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
-    console.log('prize 01:', !prize)
     if (!prize) {
       return
     }
@@ -85,7 +84,6 @@ async function getPrize(empId: string, name: string): PrizeData | undefined {
     }
     await api.addHistoryItem(saveHistory)
     await fetchPrizes()
-    console.log('prize 02:', prize)
     return prize
   } catch (error) {
     console.error(error)
@@ -132,12 +130,10 @@ async function handleOnProcessText(text: string) {
   isInfoShow.value = false
   try {
     const result = await api.verifyUser(text, 1)
-    console.log('result:', result)
     if (result.success) {
       // const user = result.user!
       // const prize = getPrize(String(user.id), user.first_name + ' ' + user.last_name)
       const prize = await getPrize(text, '-')
-      console.log('prize: 03', prize)
       if (!prize) return
       // await addLog(text, prize.id)
       prizeDrop.value = prize
@@ -198,14 +194,11 @@ async function fetchPrizes() {
   try {
     isLoading.value = true
     const DbRealtime = await api.getPrizeFirebase()
-    console.log('DbRealtime:', DbRealtime) // เพิ่มการพิมพ์ค่า DbRealtime
     if (DbRealtime && DbRealtime.items && DbRealtime.items.length > 0) {
       nextTick(() => {
         items.value = DbRealtime.items
-        // console.log('isEmptyPrize:', DbRealtime.items.value.filter((item) => item.usage < item.qty).length < 1)
         isEmptyPrize.value = (DbRealtime.items || []).filter((item) => item.usage < item.qty).length < 1
         firstPrizeId.value = ((DbRealtime.items || []).find((item) => item.is_first) || {}).id
-        console.log('items:', items.value)
         spinner.value?.render()
       })
     } else {

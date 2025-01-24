@@ -27,7 +27,6 @@ export const useApi = () => {
     try {
       const data = await getPrizeFirebase()
       const { history } = data;
-      console.log("players",history)
       if (history && history.length > 0) {
         if(history.some((value: any) => value.public_id === link)){
           return {
@@ -57,7 +56,6 @@ export const useApi = () => {
   }
 }
   const addGameLogger = async (item: any): Promise<void> => {
-    console.log("addGameLogger", item)
     const { $database } = useNuxtApp()
     const dbRef = ref($database, 'prize/players')
     try {
@@ -66,7 +64,6 @@ export const useApi = () => {
       if (snapshot.exists()) {
         const items = snapshot.val()
         const keys = Object.keys(items)
-        console.log('keys:', keys)
         if (keys.length > 0) {
           const lastKey = keys[keys.length - 1]
           const lastIndex = lastKey
@@ -121,7 +118,6 @@ const removePrizeItemByKey = async (key: string): Promise<void> => {
     const snapshot = await get(dbRef)
     if (snapshot.exists()) {
       const items = snapshot.val()
-      console.log("items",items)
       const index = items.findIndex((item: any) => item.id === key)
 
       if (index !== -1) {
@@ -149,7 +145,6 @@ const addPrizeItem = async (item: any): Promise<void> => {
     if (snapshot.exists()) {
       const items = snapshot.val()
       const keys = Object.keys(items)
-      console.log('keys:', keys)
       if (keys.length > 0) {
         const lastKey = keys[keys.length - 1]
         const lastIndex = lastKey
@@ -173,7 +168,6 @@ const addHistoryItem = async (item: any): Promise<void> => {
     if (snapshot.exists()) {
       const items = snapshot.val()
       const keys = Object.keys(items)
-      console.log('keys:', keys)
       if (keys.length > 0) {
         const lastKey = keys[keys.length - 1]
         const lastIndex = lastKey
@@ -190,7 +184,6 @@ const addHistoryItem = async (item: any): Promise<void> => {
 const updatePrizeItemById = async (id: string, updatedItem: any): Promise<void> => {
   const { $database } = useNuxtApp()
   const itemRef = ref($database, `prize/items/${id}`)
-  console.log({id , updatedItem})
   try {
     await update(itemRef, updatedItem)
     console.log(`Item with id ${id} has been updated`)

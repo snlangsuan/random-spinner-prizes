@@ -104,11 +104,9 @@ async function fetchHistory() {
     isLoading.value = true
     const DbRealtime = await api.getPrizeFirebase()
     if (DbRealtime.items && DbRealtime.items.length > 0) {
-      console.log({ DbRealtime })
       items.value = DbRealtime.history
     }
     if (DbRealtime.history && DbRealtime.history.length > 0) {
-      console.log({ DbRealtime })
       prizeItems.value = DbRealtime.items
     }
     isLoading.value = false

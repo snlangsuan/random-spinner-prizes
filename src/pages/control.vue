@@ -145,7 +145,6 @@ async function handleOnSavePrize() {
     editPrizeItem.value = { ...editPrizeItem.value, usage: 0 } // ??  usage 0 หายได้
     const oldItem = prizeItems.value.find((item) => item.id === editPrizeItem.value.id) ?? {}
     const item = Object.assign(oldItem, editPrizeItem.value)
-    console.log({ itemEdit: item })
     const index = prizeItems.value.findIndex((item) => item.id === editPrizeItem.value.id)
     await api.updatePrizeItemById(index, item)
     await fetchPrizes()
@@ -180,7 +179,6 @@ async function handleOnRemovePrizeOnFirebase(id: string) {
     showCancelButton: true,
     showConfirmButton: true,
   })
-  console.log('confirm remove', confirm)
   if (confirm) {
     isLoading.value = true
     await api.removePrizeItemByKey(id)
@@ -252,7 +250,6 @@ async function handleOnImportPrizes() {
         const file = input.files[0]
         try {
           const data = await csvToJson(file)
-          console.log({ handleOnImportPrizes: data })
           isLoading.value = true
           for (const value of data) {
             await api.addPrizeItem(value)
