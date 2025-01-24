@@ -3,6 +3,7 @@
     <v-row class="fill-height align-center justify-center">
       <div class="text-center" :style="{ marginTop: '-58px' }">
         <wheel-spinner
+          v-if="items.length > 0"
           ref="spinner"
           v-model:playing="isPlaying"
           :data="items"
@@ -41,7 +42,8 @@ const api = useApi()
 const spinner = ref<InstanceType<typeof WheelSpinner>>()
 const infoDialogRef = ref<InstanceType<typeof MainInfoDialog>>()
 const isPlaying = ref<boolean>(false)
-const items = computed(() => prizeStore.prize?.items || [])
+const items = ref<PrizeData[]>([])
+// const items = computed(() => temp.value.length > 0 ? temp.value : [])
 const channel = new BroadcastChannel(GAME_MESSAGE_CHANNEL)
 
 let interval: ReturnType<typeof setInterval> | undefined = undefined
@@ -51,8 +53,10 @@ const isProcessing = ref<boolean>(false)
 const isPrizeShow = ref<boolean>(false)
 const isInfoShow = ref<boolean>(false)
 const prizeDrop = ref<PrizeData>()
-const isEmptyPrize = computed(() => (prizeStore.prize?.items || []).filter((item) => item.usage < item.qty).length < 1)
-const firstPrizeId = computed(() => ((prizeStore.prize?.items || []).find((item) => item.is_first) || {}).id)
+const isEmptyPrize = ref<boolean>(false)
+const firstPrizeId = ref<string | undefined>()
+// const isEmptyPrize = computed(() => (prizeStore.prize?.items || []).filter((item) => item.usage < item.qty).length < 1)
+// const firstPrizeId = computed(() => ((prizeStore.prize?.items || []).find((item) => item.is_first) || {}).id)
 
 function getPrize(empId: string, name: string): PrizeData | undefined {
   const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
@@ -148,21 +152,30 @@ function handleOnReceiveControl(e: MessageEvent) {
     spinner.value?.render()
   }
 }
+
 async function fetchPrizes() {
   try {
     const DbRealtime = await api.getPrizeFirebase()
-    console.log({ DbRealtime })
-    if (items) {
-      // prizes.value = items
+    console.log('DbRealtime:', DbRealtime) // เพิ่มการพิมพ์ค่า DbRealtime
+    if (DbRealtime && DbRealtime.items && DbRealtime.items.length > 0) {
+      nextTick(() => {
+        items.value = DbRealtime.items
+        isEmptyPrize.value = items.value.filter((item) => item.usage < item.qty).length < 1
+        firstPrizeId.value = (items.value.find((item) => item.is_first) || {}).id
+        console.log('items:', items.value)
+        spinner.value?.render()
+      })
+    } else {
+      console.log('No items found or DbRealtime is null/undefined')
     }
   } catch (error) {
     console.error('Error fetching prizes:', error)
   }
 }
 onMounted(() => {
-  fetchPrizes()
   window.addEventListener('keydown', listenerBarcodeScanner)
   channel.addEventListener('message', handleOnReceiveControl)
+  fetchPrizes()
 })
 
 onBeforeUnmount(() => {

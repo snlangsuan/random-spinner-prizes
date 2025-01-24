@@ -28,14 +28,14 @@
       </template>
       <template #[`item.tools`]="{ index, item }">
         <div class="d-flex align-center justify-end" :style="{ gap: '8px' }">
-          <v-tooltip text="นำขึ้น" location="top">
+          <!-- <v-tooltip text="นำขึ้น" location="top">
             <template #activator="{ props: arrowUpProps }">
               <v-icon :disabled="index === 0" v-bind="arrowUpProps" @click="handleOnMoveUp(item.id)">
                 mdi-arrow-up-thin
               </v-icon>
             </template>
-          </v-tooltip>
-          <v-tooltip text="นำลง" location="top">
+          </v-tooltip> -->
+          <!-- <v-tooltip text="นำลง" location="top">
             <template #activator="{ props: arrowDownProps }">
               <v-icon
                 :disabled="index >= props.data.length - 1"
@@ -45,7 +45,7 @@
                 mdi-arrow-down-thin
               </v-icon>
             </template>
-          </v-tooltip>
+          </v-tooltip> -->
           <v-tooltip text="แก้ไข" location="top">
             <template #activator="{ props: editProps }">
               <v-icon v-bind="editProps" @click="handleOnEdit(item.id)">mdi-pencil-outline</v-icon>

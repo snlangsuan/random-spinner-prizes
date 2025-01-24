@@ -83,7 +83,7 @@ async function fetchPrizes() {
   try {
     const DbRealtime = await api.getPrizeFirebase()
     console.log({ DbRealtime })
-    if (DbRealtime) {
+    if (DbRealtime.items && DbRealtime.items.length > 0) {
       prizeItems.value = DbRealtime.items
     }
   } catch (error) {
