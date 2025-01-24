@@ -6,7 +6,6 @@ import type {
 } from '~/types/api'
 import { useNuxtApp } from '#app'
 import { ref, child, get, update  ,push, set} from 'firebase/database'
-import { useUserStore } from '~/stores/user.store'
 
 
 export const useApi = () => {
@@ -66,7 +65,9 @@ const removePrizeItemByKey = async (key: string): Promise<void> => {
     const snapshot = await get(dbRef)
     if (snapshot.exists()) {
       const items = snapshot.val()
+      console.log("items",items)
       const index = items.findIndex((item: any) => item.id === key)
+
       if (index !== -1) {
         items.splice(index, 1) // ลบรายการที่มี id ตรงกับ key
         await update(ref($database, 'prize'), { items }) // อัปเดตข้อมูลในฐานข้อมูล
@@ -97,7 +98,7 @@ const addPrizeItemWithIndex = async (item: any): Promise<void> => {
   const dbRef = ref($database, 'prize/items')
   try {
     const snapshot = await get(dbRef)
-    let newIndex = 1
+    let newIndex = 0
     if (snapshot.exists()) {
       const items = snapshot.val()
       const keys = Object.keys(items)
@@ -126,8 +127,19 @@ const updatePrizeItemById = async (id: string, updatedItem: any): Promise<void> 
     console.error('Error updating item:', error)
   }
 }
+const clearPrizeHistory = async (): Promise<void> => {
+  const { $database } = useNuxtApp()
+  const historyRef = ref($database, 'prize/history')
+  try {
+    await set(historyRef, null)
+    console.log('Prize history has been cleared')
+  } catch (error) {
+    console.error('Error clearing prize history:', error)
+  }
+}
 
-  return { verifyUser, addGameLogger , getPrizeFirebase , removePrizeItemByKey ,addPrizeItem ,addPrizeItemWithIndex , updatePrizeItemById }
+  return { verifyUser, addGameLogger , getPrizeFirebase , removePrizeItemByKey ,addPrizeItem ,addPrizeItemWithIndex , updatePrizeItemById , clearPrizeHistory }
+  
 }
 
 

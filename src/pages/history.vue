@@ -37,16 +37,19 @@
 </template>
 
 <script setup lang="ts">
-import dayjs from 'dayjs';
+import dayjs from 'dayjs'
 import { useHistoryStore } from '~/stores/history.store'
 import { usePrizeStore } from '~/stores/prize.store'
+import { useUserStore } from '~/stores/user.store'
 import type { THeaders } from '~/types/vuetify'
 import type CustomDialog from '~/components/CustomDialog.vue'
 
 const historyStore = useHistoryStore()
 const prizeStore = usePrizeStore()
+const userStore = useUserStore()
 const customDialogRef = ref<InstanceType<typeof CustomDialog>>()
 const isDialogShow = ref<boolean>(false)
+const api = useApi()
 const headers = ref<THeaders>([
   {
     title: '#',
@@ -84,8 +87,25 @@ const headers = ref<THeaders>([
     width: 120,
   },
 ])
-const items = computed(() => historyStore.history?.items || [])
-const prizeItems = computed(() => prizeStore.prize?.items || [])
+// const items = computed(() => historyStore.history?.items || [])
+// const prizeItems = computed(() => prizeStore.prize?.items || [])
+const items = ref([])
+const prizeItems = ref([])
+onMounted(() => {
+  userStore.checkAuthState()
+  fetchHistory()
+})
+async function fetchHistory() {
+  const DbRealtime = await api.getPrizeFirebase()
+  if (DbRealtime.items && DbRealtime.items.length > 0) {
+    console.log({ DbRealtime })
+    items.value = DbRealtime.history
+  }
+  if (DbRealtime.history && DbRealtime.history.length > 0) {
+    console.log({ DbRealtime })
+    prizeItems.value = DbRealtime.items
+  }
+}
 
 function getPrize(id: string): string {
   const item = prizeItems.value.find((item) => item.id === id)
@@ -106,7 +126,10 @@ async function handleOnReset() {
     showConfirmButton: true,
   })
   if (!confirm) return
-  historyStore.reset()
+  await api.clearPrizeHistory()
+  await fetchHistory()
+
+  // historyStore.reset()
 }
 
 definePageMeta({

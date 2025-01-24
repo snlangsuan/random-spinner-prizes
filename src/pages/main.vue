@@ -23,6 +23,7 @@
     </div>
     <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
     <main-info-dialog ref="infoDialogRef" v-model="isInfoShow" />
+    <!-- <v-btn @click="()=> handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB')">test barcode</v-btn> -->
   </v-container>
 </template>
 
@@ -83,6 +84,7 @@ async function addLog(user: IUserInfo, prizeId: string) {
 }
 
 async function handleOnProcessText(text: string) {
+  console.log('text:', text)
   if (!/^https:\/\/im\.jts/.test(text)) return
   if (isProcessing.value) return
   if (isEmptyPrize.value) {
@@ -94,6 +96,7 @@ async function handleOnProcessText(text: string) {
   isInfoShow.value = false
   try {
     const result = await api.verifyUser(text, 1)
+    console.log('result:', result)
     if (result.success) {
       const user = result.user!
       const prize = getPrize(String(user.id), user.first_name + ' ' + user.last_name)
@@ -124,7 +127,7 @@ function listenerBarcodeScanner(event: KeyboardEvent) {
   isReceivingText.value = true
   if (event.code === 'F12') event.preventDefault()
   if (interval) clearInterval(interval)
-  if (event.code === 'Enter') {
+  if (event.code === 'Enter') { 
     handleOnProcessText(barcode.value)
     barcode.value = ''
   }
