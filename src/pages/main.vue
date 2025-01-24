@@ -24,6 +24,9 @@
     <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
     <main-info-dialog ref="infoDialogRef" v-model="isInfoShow" />
     <v-btn @click="() => handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB22')">test barcode</v-btn>
+    <v-overlay :model-value="isLoading" class="align-center justify-center">
+      <v-progress-circular color="primary" indeterminate />
+    </v-overlay>
   </v-container>
 </template>
 
@@ -136,7 +139,7 @@ async function handleOnProcessText(text: string) {
       const prize = await getPrize(text, '-')
       console.log('prize: 03', prize)
       if (!prize) return
-      await addLog(text, prize.id)
+      // await addLog(text, prize.id)
       prizeDrop.value = prize
       spinner.value?.spin(prize.id)
     } else {
@@ -193,6 +196,7 @@ function handleOnReceiveControl(e: MessageEvent) {
 
 async function fetchPrizes() {
   try {
+    isLoading.value = true
     const DbRealtime = await api.getPrizeFirebase()
     console.log('DbRealtime:', DbRealtime) // เพิ่มการพิมพ์ค่า DbRealtime
     if (DbRealtime && DbRealtime.items && DbRealtime.items.length > 0) {
@@ -209,6 +213,8 @@ async function fetchPrizes() {
     }
   } catch (error) {
     console.error('Error fetching prizes:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 onMounted(() => {

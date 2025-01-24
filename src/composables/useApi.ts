@@ -23,13 +23,13 @@ export const useApi = () => {
   //   )
   //   return result
   // }
-  const verifyUser = async (link: string, gameId: number) => {
+  const verifyUser = async (link: string) => {
     try {
       const data = await getPrizeFirebase()
-      const { players } = data;
-      console.log("players",players)
-      if (players && players.length > 0) {
-        if(players.some((value: any) => value.empId === link)){
+      const { history } = data;
+      console.log("players",history)
+      if (history && history.length > 0) {
+        if(history.some((value: any) => value.public_id === link)){
           return {
           success: false,
           msg : "",
