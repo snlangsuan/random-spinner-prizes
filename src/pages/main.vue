@@ -227,11 +227,11 @@ useHead({
 
 <style lang="scss" scoped>
 .main-background {
-  min-width: 4375px !important;
-  width: 4375px !important;
-  height: 7000px !important;
+  min-width: 900px !important;
+  width: 900px !important;
+  height: 1600px !important;
   background-color: #fef7d9;
-  background-image: url('~/assets/images/bg-spin-1-7.png');
+  background-image: url('~/assets/images/bg-spin-1-6.png');
   background-repeat: no-repeat;
   background-size: contain;
   background-position: top center;
