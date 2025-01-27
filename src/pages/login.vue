@@ -3,22 +3,24 @@
     <v-row class="fill-height align-center justify-center">
       <v-col cols="12" sm="8" md="4">
         <v-card>
-          <v-card-title class="headline">Login</v-card-title>
-          <v-card-text>
+          <v-card-title class="headline text-center py-4">Login</v-card-title>
+          <v-card-text class="pb-3">
             <v-form ref="form" v-model="valid" lazy-validation>
-              <v-text-field v-model="email" label="Email" :rules="emailRules" required></v-text-field>
+              <v-text-field v-model="email" placeholder="Email" :rules="emailRules" single-line required />
               <v-text-field
                 v-model="password"
-                label="Password"
+                placeholder="Password"
                 :rules="passwordRules"
                 type="password"
+                class="mt-2"
+                single-line
                 required
-              ></v-text-field>
+              />
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn :disabled="!valid" color="primary" @click="login">Login</v-btn>
+            <v-spacer />
+            <v-btn :disabled="!valid" color="primary" variant="flat" block @click="login">Login</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
