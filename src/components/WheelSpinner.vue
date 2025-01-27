@@ -80,6 +80,7 @@ const wheelWidth = ref<number>(700)
 const wheelHeight = ref<number>(700)
 
 function render() {
+  console.log('render', props.data)
   const padding = { top: 45, right: 45, bottom: 45, left: 45 }
   // const orgWidth = 500
   // const orgHeight = 500
@@ -153,6 +154,13 @@ function render() {
     const randomAssetIndex = props.data.findIndex((item) => item.id === props.first)
     const randomPieMovement = 22.5
 
+    console.log([
+      props.data.length,
+      randomAssetIndex,
+      piedegree,
+      randomPieMovement,
+      degrees,
+    ])
     rotation = (props.data.length - randomAssetIndex) * piedegree - randomPieMovement + degrees
     return `rotate(${rotation})`
   })

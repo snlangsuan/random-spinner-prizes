@@ -3,6 +3,7 @@
     <v-row class="fill-height align-center justify-center">
       <div class="text-center" :style="{ marginTop: '-58px' }">
         <wheel-spinner
+          v-if="items.length > 0"
           ref="spinner"
           v-model:playing="isPlaying"
           :data="items"
@@ -22,6 +23,10 @@
     </div>
     <prize-scene v-model="isPrizeShow" :prize="prizeDrop" />
     <main-info-dialog ref="infoDialogRef" v-model="isInfoShow" />
+    <!-- <v-btn @click="() => handleOnProcessText('https://im.jts.co.th/profile/TgfNpiDB22')">test barcode</v-btn> -->
+    <v-overlay :model-value="isLoading" class="align-center justify-center">
+      <v-progress-circular color="primary" indeterminate />
+    </v-overlay>
   </v-container>
 </template>
 
@@ -34,6 +39,7 @@ import type WheelSpinner from '~/components/WheelSpinner.vue'
 import type { PrizeData } from '~/types/prize.d'
 import type { IGameStage } from '~/types/game.d'
 import type { IUserInfo } from '~/types/api'
+import { v4 as uuidv4 } from 'uuid'
 
 const prizeStore = usePrizeStore()
 const historyStore = useHistoryStore()
@@ -41,7 +47,8 @@ const api = useApi()
 const spinner = ref<InstanceType<typeof WheelSpinner>>()
 const infoDialogRef = ref<InstanceType<typeof MainInfoDialog>>()
 const isPlaying = ref<boolean>(false)
-const items = computed(() => prizeStore.prize?.items || [])
+const items = ref<PrizeData[]>([])
+// const items = computed(() => temp.value.length > 0 ? temp.value : [])
 const channel = new BroadcastChannel(GAME_MESSAGE_CHANNEL)
 
 let interval: ReturnType<typeof setInterval> | undefined = undefined
@@ -51,15 +58,41 @@ const isProcessing = ref<boolean>(false)
 const isPrizeShow = ref<boolean>(false)
 const isInfoShow = ref<boolean>(false)
 const prizeDrop = ref<PrizeData>()
-const isEmptyPrize = computed(() => (prizeStore.prize?.items || []).filter((item) => item.usage < item.qty).length < 1)
-const firstPrizeId = computed(() => ((prizeStore.prize?.items || []).find((item) => item.is_first) || {}).id)
+const isEmptyPrize = ref<boolean>(false)
+const firstPrizeId = ref<string | undefined>()
+const isLoading = ref<boolean>(false)
+// const isEmptyPrize = computed(() => (prizeStore.prize?.items || []).filter((item) => item.usage < item.qty).length < 1)
+// const firstPrizeId = computed(() => ((prizeStore.prize?.items || []).find((item) => item.is_first) || {}).id)
 
-function getPrize(empId: string, name: string): PrizeData | undefined {
-  const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
-  if (!prize) return
-  prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
-  historyStore.add(empId, name, prize.id)
-  return prize
+async function getPrize(empId: string, name: string): PrizeData | undefined {
+  try {
+    const prize = weightedRandom(items.value.filter((item) => item.usage < item.qty))
+    if (!prize) {
+      return
+    }
+
+    // prizeStore.updatePrize(prize.id, { ...prize, usage: prize.usage + 1 })
+    // historyStore.add(empId, name, prize.id)
+    const index = items.value.findIndex((item) => item.id === prize.id)
+    await api.updatePrizeItemById(index, { ...prize, usage: prize.usage + 1 })
+    const saveHistory = {
+      id: uuidv4(),
+      public_id: empId,
+      name: name,
+      prize_id: prize.id,
+      created_at: Date.now(),
+    }
+    await api.addHistoryItem(saveHistory)
+    await fetchPrizes()
+    return prize
+  } catch (error) {
+    console.error(error)
+    const message = 'เกิดข้อผิดพลาดบางประการ กรุณาลองใหม่อีกครั้ง'
+    infoDialogRef.value?.open({
+      title: 'แจ้งเตือน',
+      message,
+    })
+  }
 }
 
 function handleOnStartSpin() {
@@ -72,13 +105,20 @@ function handleOnStartSpin() {
 
 async function addLog(user: IUserInfo, prizeId: string) {
   try {
-    await api.addGameLogger(user.id, 1, prizeId)
+    const dataAddLog = {
+      empId: user,
+      gameId: 1,
+      prizeId,
+    }
+    await api.addGameLogger(dataAddLog)
+    // await api.addGameLogger(user.id, 1, prizeId)
   } catch (error) {
     console.error(error)
   }
 }
 
 async function handleOnProcessText(text: string) {
+  console.log('text:', text)
   if (!/^https:\/\/im\.jts/.test(text)) return
   if (isProcessing.value) return
   if (isEmptyPrize.value) {
@@ -91,10 +131,11 @@ async function handleOnProcessText(text: string) {
   try {
     const result = await api.verifyUser(text, 1)
     if (result.success) {
-      const user = result.user!
-      const prize = getPrize(String(user.id), user.first_name + ' ' + user.last_name)
+      // const user = result.user!
+      // const prize = getPrize(String(user.id), user.first_name + ' ' + user.last_name)
+      const prize = await getPrize(text, '-')
       if (!prize) return
-      await addLog(user, prize.id)
+      // await addLog(text, prize.id)
       prizeDrop.value = prize
       spinner.value?.spin(prize.id)
     } else {
@@ -149,9 +190,30 @@ function handleOnReceiveControl(e: MessageEvent) {
   }
 }
 
+async function fetchPrizes() {
+  try {
+    isLoading.value = true
+    const DbRealtime = await api.getPrizeFirebase()
+    if (DbRealtime && DbRealtime.items && DbRealtime.items.length > 0) {
+      nextTick(() => {
+        items.value = DbRealtime.items
+        isEmptyPrize.value = (DbRealtime.items || []).filter((item) => item.usage < item.qty).length < 1
+        firstPrizeId.value = ((DbRealtime.items || []).find((item) => item.is_first) || {}).id
+        spinner.value?.render()
+      })
+    } else {
+      console.log('No items found or DbRealtime is null/undefined')
+    }
+  } catch (error) {
+    console.error('Error fetching prizes:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
 onMounted(() => {
   window.addEventListener('keydown', listenerBarcodeScanner)
   channel.addEventListener('message', handleOnReceiveControl)
+  fetchPrizes()
 })
 
 onBeforeUnmount(() => {
