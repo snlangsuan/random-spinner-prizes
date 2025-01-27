@@ -1,4 +1,4 @@
-import { defineStore , createPinia } from 'pinia'
+import { defineStore, createPinia } from 'pinia'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
@@ -22,18 +22,17 @@ export const useUserStore = defineStore('user', {
     },
     async checkAuthState() {
       const auth = getAuth()
-      console.log({auth :auth.currentUser })
+      console.log({ auth: auth.currentUser })
       onAuthStateChanged(auth, (user) => {
-        console.log("onAuthStateChanged " ,user)
+        console.log('onAuthStateChanged ', user)
         if (user) {
           this.setUid(user.uid)
         } else {
           this.clearUid()
-           window.location.href = '/login'
+          navigateTo({ name: 'login' })
         }
       })
     },
-   
   },
   persist: true,
 })
