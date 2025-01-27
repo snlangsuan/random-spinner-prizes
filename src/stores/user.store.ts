@@ -22,9 +22,7 @@ export const useUserStore = defineStore('user', {
     },
     async checkAuthState() {
       const auth = getAuth()
-      console.log({auth :auth.currentUser })
       onAuthStateChanged(auth, (user) => {
-        console.log("onAuthStateChanged " ,user)
         if (user) {
           this.setUid(user.uid)
         } else {
