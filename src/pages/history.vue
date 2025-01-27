@@ -93,8 +93,10 @@ const headers = ref<THeaders>([
 ])
 // const items = computed(() => historyStore.history?.items || [])
 // const prizeItems = computed(() => prizeStore.prize?.items || [])
-const items = ref([])
-const prizeItems = ref([])
+
+const items = ref<HistoryItem[]>([])
+
+const prizeItems = ref<PrizeItem[]>([])
 onMounted(() => {
   userStore.checkAuthState()
   fetchHistory()

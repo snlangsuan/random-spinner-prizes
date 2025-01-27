@@ -9,3 +9,4 @@ export interface PrizeData {
   image: string
   weight: number
 }
+
