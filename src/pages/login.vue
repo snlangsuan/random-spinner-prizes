@@ -19,7 +19,6 @@
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-spacer />
             <v-btn :disabled="!valid" color="primary" variant="flat" block @click="login">Login</v-btn>
           </v-card-actions>
         </v-card>
